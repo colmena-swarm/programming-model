@@ -1,0 +1,28 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "colmena"
+version = "0.0.1"
+authors = [
+    {name="Workflows and Distributed Computing group"},
+]
+
+
+description = "Colmena swarm computing library"
+readme = "README.md"
+requires-python = ">=3.8"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Operating System :: OS Independent",
+    "License :: OSI Approved :: Apache Software License",
+]
+dependencies = [
+    "coloredlogs",
+    "grpcio",
+    "grpcio-tools",
+    "typing",
+    "numpy",
+]
+
