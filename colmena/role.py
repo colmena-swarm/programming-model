@@ -31,6 +31,7 @@ class Role:
         self._running = False
         self.logger = Logger(self).get_logger()
         self._name = type(self).__name__
+        self._service_name = args[0].__name__.lower()
         try:
             self.channels = []
             for name, channel in kwargs["channels"].items():
@@ -65,7 +66,7 @@ class Role:
             MetricInterface(f"{_id}_{self.get_hostname()}_{self._name}"),
         )
 
-        self.comms = Communications(self)
+        self.comms = Communications(self, self._service_name)
 
     @property
     def kpis(self):

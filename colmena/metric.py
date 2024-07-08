@@ -96,5 +96,4 @@ class MetricInterface:
         self.__publish_method = func
 
     def publish(self, value: float):
-        response = self.__publish_method(metric_name=self.name, metric_value=value)
-        self.__logger.debug(response)
+        self.__publish_method(key=self.name, value=value)

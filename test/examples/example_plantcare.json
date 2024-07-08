@@ -1,0 +1,28 @@
+{
+    "id": {
+        "value": "ExamplePlantcare"
+    },
+    "kpis": [],
+    "dockerRoleDefinitions": [
+        {
+            "id": "Plantsensor",
+            "imageId": "colmena/testplantsensor",
+            "hardwareRequirements": [
+                "SENSOR"
+            ],
+            "kpis": []
+        },
+        {
+            "id": "Plantwatering",
+            "imageId": "colmena/testplantwatering",
+            "hardwareRequirements": [
+                "WATERING"
+            ],
+            "kpis": [
+                {
+                    "value": "exampleplantcare/moisture[5s] > 20"
+                }
+            ]
+        }
+    ]
+}

@@ -17,8 +17,7 @@
 
 # -*- coding: utf-8 -*-
 
-import multiprocessing
-import pickle
+import threading
 from typing import Callable, TYPE_CHECKING
 from functools import wraps
 from colmena.utils.exceptions import WrongFunctionForDecoratorException
@@ -47,7 +46,7 @@ class Async:
             @wraps(func)
             def logic(self_, *args, **kwargs):
                 for name, channel in self.__channels.items():
-                    process = multiprocessing.Process(
+                    process = threading.Thread(
                         target=self._behavior,
                         args=(
                             lambda r: func(self_, *args, **kwargs, **r),
@@ -69,31 +68,27 @@ class Async:
         )
 
     def _behavior(
-        self,
-        func: Callable,
-        name: str,
-        channel: "colmena.ChannelInterface",
-        num_executions: "colmena.MetricInterface",
+            self,
+            func: Callable,
+            name: str,
+            channel: "colmena.ChannelInterface",
+            num_executions: "colmena.MetricInterface",
     ):
         self.__logger.debug("Running async")
-        if self.__it is None:
-            while True:
-                self.call_async(channel.receive(), func, name, num_executions)
-
-        else:
-            for _ in range(self.__it):
-                self.call_async(channel.receive(), func, name, num_executions)
+        self.call_async(channel.receive(), func, name, num_executions)
 
     @staticmethod
     def call_async(
-        response: bytes,
-        func: Callable,
-        name: str,
-        num_executions: "colmena.MetricInterface",
+            sub,
+            func: Callable,
+            name: str,
+            num_executions: "colmena.MetricInterface",
     ):
-        message = pickle.loads(response)
-        func({name: message})
-        num_executions.publish(1)
+        while True:
+            for sample in sub.receive():
+                message = sample
+                func({name: message})
+                num_executions.publish(1)
 
 
 class Persistent:
@@ -112,7 +107,7 @@ class Persistent:
 
             @wraps(func)
             def logic(self_, *args, **kwargs):
-                process = multiprocessing.Process(
+                process = threading.Thread(
                     target=self._behavior,
                     args=(lambda: func(self_, *args, **kwargs), self_._num_executions),
                 )
