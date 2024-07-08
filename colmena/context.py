@@ -19,14 +19,14 @@
 
 import json
 from functools import wraps
-from colmena.utils.exceptions import (
+from colmena.exceptions import (
     FunctionNotImplementedException,
     AttributeNotExistException,
     WrongFunctionForDecoratorException,
     WrongClassForDecoratorException,
 )
 from typing import Callable
-from colmena.utils.logger import Logger
+from colmena.logger import Logger
 
 
 class Context:
@@ -49,7 +49,7 @@ class Context:
                     _dict_value = self.scope
                 else:
                     raise WrongClassForDecoratorException(
-                        class_name=parent_class_name, dec_name="Metric"
+                        class_name=parent_class_name, dec_name="Context"
                     )
 
                 try:
@@ -60,7 +60,7 @@ class Context:
 
         else:
             raise WrongFunctionForDecoratorException(
-                func_name=func.__name__, dec_name="Metric"
+                func_name=func.__name__, dec_name="Context"
             )
         return logic
 

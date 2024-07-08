@@ -17,47 +17,46 @@
 
 # -*- coding: utf-8 -*-
 
-import os
 from typing import TYPE_CHECKING
-import grpc
-from colmena.grpc import route_guide_pb2_grpc
-from colmena.grpc.colmena_grpc_client import ColmenaClient
-from colmena.utils.logger import Logger
+
+from colmena.logger import Logger
+from colmena.client import ZenohClient, PyreClient, ContextAwareness
 
 if TYPE_CHECKING:
     import colmena
 
+def get_context_names(role):
+    try:
+        return role._context
+    except AttributeError:
+        return []
 
 class Communications:
-    """Class to handle communications with GRPC."""
+    """Class to handle communications using clients."""
 
-    def __init__(self, role: "colmena.Role"):
+    def __init__(self):
         self.__logger = Logger(self).get_logger()
-        try:
-            self.__ip = os.environ["DCP_IP_ADDRESS"]
-        except KeyError:
-            self.__logger.debug(
-                "Environment variable DCP_IP_ADDRESS not set. Setting it to 'localhost'"
-            )
-            self.__ip = "localhost"
-        self.__logger.debug(f"DCP_IP_ADDRESS: {self.__ip}")
 
-        c = grpc.insecure_channel(f"{self.__ip}:5555")
-        stub = route_guide_pb2_grpc.ColmenaPlatformStub(c)
-        self.__client = ColmenaClient(stub)
-        self.__initialize_grpc(role)
+    def start(self, role: "colmena.Role", zenoh_root: str):
+        self.__pyre_client = PyreClient()
+        self.__pyre_client.start()
+        self.__zenoh_client = ZenohClient(zenoh_root)
+        self.__context_awareness = ContextAwareness(ZenohClient("dockerContextDefinitions"), get_context_names(role))
+        self.__initialize(role)
 
-    def __initialize_grpc(self, role: "colmena.Role"):
+    def __initialize(self, role: "colmena.Role"):
         """Initializes channels, data, and metrics interfaces.
 
         Parameter:
             - role -- Role object.
         """
+
         try:
             for c in role.channels:
                 channel = getattr(role, c)
-                channel._set_publish_method(self.__client.publish_message)
-                channel._set_subscribe_method(self.__client.subscribe)
+                channel._set_context_awareness(self.__context_awareness)
+                channel._set_publish_method(self.__pyre_client.publish)
+                channel._set_subscribe_method(self.__pyre_client.subscribe)
 
         except AttributeError:
             self.__logger.debug(
@@ -67,15 +66,20 @@ class Communications:
         try:
             for m in role.metrics:
                 metric = getattr(role, m)
-                metric._set_publish_method(self.__client.publish_metric)
+                metric._set_context_awareness(self.__context_awareness)
+                metric._set_publish_method(self.__zenoh_client.publish)
         except AttributeError:
             self.__logger.debug(f"No metric interfaces in role '{type(role).__name__}'")
 
         try:
             for d in role.data:
                 data = getattr(role, d)
-                data._set_publish_method(self.__client.publish_data)
-                data._set_get_method(self.__client.get_data)
+                data._set_context_awareness(self.__context_awareness)
+                data._set_publish_method(self.__zenoh_client.put)
+                data._set_get_method(self.__zenoh_client.get)
 
         except AttributeError:
             self.__logger.debug(f"No data interfaces in role '{type(role).__name__}'")
+
+    def stop(self):
+        self.__pyre_client.stop()

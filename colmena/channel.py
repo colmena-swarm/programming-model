@@ -17,16 +17,15 @@
 
 # -*- coding: utf-8 -*-
 
-import pickle
 from typing import Callable
 from functools import wraps
-from grpc.framework.foundation import stream
-from colmena.utils.exceptions import (
+from colmena.client import ContextAwareness
+from colmena.exceptions import (
     WrongClassForDecoratorException,
     WrongFunctionForDecoratorException,
     ChannelNotExistException,
 )
-from colmena.utils.logger import Logger
+from colmena.logger import Logger
 
 
 class Channel:
@@ -46,59 +45,61 @@ class Channel:
         return self.__name
 
     def __call__(self, func: Callable) -> Callable:
-        if func.__name__ in ("__init__", "logic"):
-
-            @wraps(func)
-            def logic(self_, *args, **kwargs):
-                parent_class_name = self_.__class__.__bases__[0].__name__
-
-                if parent_class_name == "Role":
-                    service_config = args[0].__init__.config
-                    try:
-                        scope = service_config["channels"][self.__name]
-                    except KeyError as exc:
-                        raise ChannelNotExistException(
-                            channel_name=self.__name
-                        ) from exc
-
-                    try:
-                        channels = kwargs["channels"]
-                    except KeyError:
-                        channels = {}
-
-                    self.__channel_if.scope = scope
-                    channels[self.__name] = self.__channel_if
-                    kwargs["channels"] = channels
-
-                elif not parent_class_name == "Service":
-                    raise WrongClassForDecoratorException(
-                        class_name=type(self_).__name__, dec_name="Channel"
-                    )
-                return func(self_, *args, **kwargs)
-
-        else:
+        if func.__name__ not in ("__init__", "logic"):
             raise WrongFunctionForDecoratorException(
                 func_name=func.__name__, dec_name="Channel"
             )
 
+        @wraps(func)
+        def logic(self_, *args, **kwargs):
+            parent_class_name = self_.__class__.__bases__[0].__name__
+
+            if parent_class_name != "Role" and parent_class_name != "Service":
+                raise WrongClassForDecoratorException(
+                    class_name=type(self_).__name__, dec_name="Channel"
+                )
+
+            if parent_class_name == "Role":
+                kwargs = self.role_decorator_call(*args, **kwargs)
+            return func(self_, *args, **kwargs)
+
+        self.add_config_to_logic(logic, func)
+        return logic
+
+    def role_decorator_call(self, *args, **kwargs):
+        try:
+            service_config = args[0].__init__.config
+            scope = service_config["channels"][self.__name]
+        except (AttributeError, KeyError) as exc:
+            raise ChannelNotExistException(channel_name=self.__name) from exc
+
+        try:
+            channels = kwargs["channels"]
+        except KeyError:
+            channels = {}
+
+        self.__channel_if.scope = scope
+        channels[self.__name] = self.__channel_if
+        kwargs["channels"] = channels
+        return kwargs
+
+    def add_config_to_logic(self, logic, func):
         try:
             logic.config = func.config
         except AttributeError:
             logic.config = {}
 
-        if self.__scope is None:
+        if self.__scope is None:  # If there is no scope defined (Role)
             try:
                 logic.config["channels"].append(self.__name)
             except KeyError:
                 logic.config["channels"] = [self.__name]
 
-        else:
+        else:  # If scope is defined (Service)
             try:
                 logic.config["channels"][self.__name] = self.__scope
             except KeyError:
                 logic.config["channels"] = {self.__name: self.__scope}
-
-        return logic
 
 
 class ChannelInterface:
@@ -117,6 +118,9 @@ class ChannelInterface:
     def scope(self, scope):
         self._scope = scope
 
+    def _set_context_awareness(self, context_awareness: ContextAwareness):
+        self.__context_awareness = context_awareness
+
     def _set_publish_method(self, func: Callable):
         self.__publish_method = func
 
@@ -124,9 +128,7 @@ class ChannelInterface:
         self.__subscribe_method = func
 
     def publish(self, message: object):
-        message_enc = bytes(pickle.dumps(message))
-        log = self.__publish_method(channel_name=self._name, message=message_enc)
-        self.__logger.info(log)
+        self.__context_awareness.publish(key=self._name, value=message, publisher=self.__publish_method)
 
-    def receive(self) -> stream:
-        return self.__subscribe_method(channel_name=self._name)
+    def receive(self):
+        return self.__subscribe_method(key=self._name)

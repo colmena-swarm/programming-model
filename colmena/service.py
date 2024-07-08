@@ -18,7 +18,7 @@
 # -*- coding: utf-8 -*-
 
 from typing import List
-from colmena.utils.logger import Logger
+from colmena.logger import Logger
 
 
 class Service:
@@ -27,7 +27,7 @@ class Service:
     def __init__(self):
         self.logger = Logger(self).get_logger()
         self._roles = {}
-
+        self._name = type(self).__name__
         self.config = self.get_info()
         if not hasattr(self, "data"):
             self.__data = {}
@@ -61,5 +61,8 @@ class Service:
         config = {"kpis": self.kpis}
         for role_name in list(type(self).__dict__.keys())[2:-1]:
             role = getattr(self, role_name)
-            self._roles[role_name] = role.__init__.config
+            try:
+                self._roles[role_name] = role.__init__.config
+            except AttributeError:
+                self._roles[role_name] = []
         return config | self._roles

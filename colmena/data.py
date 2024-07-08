@@ -20,12 +20,13 @@
 import pickle
 from typing import Callable
 from functools import wraps
-from colmena.utils.exceptions import (
+from colmena.client import ContextAwareness
+from colmena.exceptions import (
     WrongClassForDecoratorException,
     WrongFunctionForDecoratorException,
     DataNotExistException,
 )
-from colmena.utils.logger import Logger
+from colmena.logger import Logger
 
 
 class Data:
@@ -52,10 +53,10 @@ class Data:
                 parent_class_name = self_.__class__.__bases__[0].__name__
 
                 if parent_class_name == "Role":
-                    service_config = args[0].__init__.config
                     try:
+                        service_config = args[0].__init__.config
                         scope = service_config["data"][self.__name]
-                    except KeyError:
+                    except (AttributeError, KeyError):
                         raise DataNotExistException(data_name=self.__name)
 
                     try:
@@ -113,6 +114,9 @@ class DataInterface:
     def scope(self, scope):
         self._scope = scope
 
+    def _set_context_awareness(self, context_awareness: ContextAwareness):
+        self.__context_awareness = context_awareness
+
     def _set_publish_method(self, func: Callable):
         self.__publish_method = func
 
@@ -120,10 +124,8 @@ class DataInterface:
         self.__get_method = func
 
     def publish(self, value: object):
-        value_enc = bytes(pickle.dumps(value))
-        response = self.__publish_method(data_name=self._name, data_value=value_enc)
-        self.__logger.info(response)
+        self.__context_awareness.publish(key=self._name, value=value, publisher=self.__publish_method)
 
     def get(self) -> bytes:
-        value = self.__get_method(data_name=self._name)
-        return pickle.loads(value)
+        value = self.__get_method(key=self._name)
+        return value

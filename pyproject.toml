@@ -1,16 +1,19 @@
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
+[tool.hatch.metadata]
+allow-direct-references = true
+
 
 [project]
 name = "colmena"
-version = "0.0.1"
+version = "0.1.0"
 authors = [
     {name="Workflows and Distributed Computing group"},
 ]
 
 
-description = "Colmena swarm computing library"
+description = "COLMENA Programming model library"
 readme = "README.md"
 requires-python = ">=3.8"
 classifiers = [
@@ -20,9 +23,10 @@ classifiers = [
 ]
 dependencies = [
     "coloredlogs",
-    "grpcio",
-    "grpcio-tools",
+    "eclipse-zenoh==0.10.1rc0",
     "typing",
     "numpy",
+    "zeromq-pyre@git+https://github.com/zeromq/pyre.git",
+    "pytest"
 ]
 
