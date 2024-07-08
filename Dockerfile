@@ -31,4 +31,3 @@ FROM python:3.9.18-slim-bookworm
 
     WORKDIR /colmena/scripts
     ENTRYPOINT ["python3", "-m", "colmena_build", "--colmena_path=/colmena", "--service_code_path=/app"]
-        

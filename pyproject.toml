@@ -20,9 +20,9 @@ classifiers = [
 ]
 dependencies = [
     "coloredlogs",
-    "grpcio",
-    "grpcio-tools",
+    "eclipse-zenoh",
     "typing",
     "numpy",
+    "zeromq-pyre"
 ]
 

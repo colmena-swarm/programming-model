@@ -120,10 +120,8 @@ class DataInterface:
         self.__get_method = func
 
     def publish(self, value: object):
-        value_enc = bytes(pickle.dumps(value))
-        response = self.__publish_method(data_name=self._name, data_value=value_enc)
-        self.__logger.info(response)
+        self.__publish_method(key=self._name, value=value)
 
     def get(self) -> bytes:
-        value = self.__get_method(data_name=self._name)
-        return pickle.loads(value)
+        value = self.__get_method(key=self._name)
+        return value

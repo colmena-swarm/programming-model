@@ -1,0 +1,20 @@
+{
+    "id": {
+        "value": "ExampleChannels"
+    },
+    "kpis": [],
+    "dockerRoleDefinitions": [
+        {
+            "id": "Publisher",
+            "imageId": "colmena/testpublisher",
+            "hardwareRequirements": [],
+            "kpis": []
+        },
+        {
+            "id": "Receiver",
+            "imageId": "colmena/testreceiver",
+            "hardwareRequirements": [],
+            "kpis": []
+        }
+    ]
+}

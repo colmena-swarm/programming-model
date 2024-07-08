@@ -17,10 +17,8 @@
 
 # -*- coding: utf-8 -*-
 
-import pickle
 from typing import Callable
 from functools import wraps
-from grpc.framework.foundation import stream
 from colmena.utils.exceptions import (
     WrongClassForDecoratorException,
     WrongFunctionForDecoratorException,
@@ -46,59 +44,61 @@ class Channel:
         return self.__name
 
     def __call__(self, func: Callable) -> Callable:
-        if func.__name__ in ("__init__", "logic"):
-
-            @wraps(func)
-            def logic(self_, *args, **kwargs):
-                parent_class_name = self_.__class__.__bases__[0].__name__
-
-                if parent_class_name == "Role":
-                    service_config = args[0].__init__.config
-                    try:
-                        scope = service_config["channels"][self.__name]
-                    except KeyError as exc:
-                        raise ChannelNotExistException(
-                            channel_name=self.__name
-                        ) from exc
-
-                    try:
-                        channels = kwargs["channels"]
-                    except KeyError:
-                        channels = {}
-
-                    self.__channel_if.scope = scope
-                    channels[self.__name] = self.__channel_if
-                    kwargs["channels"] = channels
-
-                elif not parent_class_name == "Service":
-                    raise WrongClassForDecoratorException(
-                        class_name=type(self_).__name__, dec_name="Channel"
-                    )
-                return func(self_, *args, **kwargs)
-
-        else:
+        if func.__name__ not in ("__init__", "logic"):
             raise WrongFunctionForDecoratorException(
                 func_name=func.__name__, dec_name="Channel"
             )
 
+        @wraps(func)
+        def logic(self_, *args, **kwargs):
+            parent_class_name = self_.__class__.__bases__[0].__name__
+
+            if parent_class_name != "Role" and parent_class_name != "Service":
+                raise WrongClassForDecoratorException(
+                    class_name=type(self_).__name__, dec_name="Channel"
+                )
+
+            if parent_class_name == "Role":
+                kwargs = self.role_decorator_call(*args, **kwargs)
+            return func(self_, *args, **kwargs)
+
+        self.add_config_to_logic(logic, func)
+        return logic
+
+    def role_decorator_call(self, *args, **kwargs):
+        service_config = args[0].__init__.config
+        try:
+            scope = service_config["channels"][self.__name]
+        except KeyError as exc:
+            raise ChannelNotExistException(channel_name=self.__name) from exc
+
+        try:
+            channels = kwargs["channels"]
+        except KeyError:
+            channels = {}
+
+        self.__channel_if.scope = scope
+        channels[self.__name] = self.__channel_if
+        kwargs["channels"] = channels
+        return kwargs
+
+    def add_config_to_logic(self, logic, func):
         try:
             logic.config = func.config
         except AttributeError:
             logic.config = {}
 
-        if self.__scope is None:
+        if self.__scope is None:  # If there is no scope defined (Role)
             try:
                 logic.config["channels"].append(self.__name)
             except KeyError:
                 logic.config["channels"] = [self.__name]
 
-        else:
+        else:  # If scope is defined (Service)
             try:
                 logic.config["channels"][self.__name] = self.__scope
             except KeyError:
                 logic.config["channels"] = {self.__name: self.__scope}
-
-        return logic
 
 
 class ChannelInterface:
@@ -124,9 +124,7 @@ class ChannelInterface:
         self.__subscribe_method = func
 
     def publish(self, message: object):
-        message_enc = bytes(pickle.dumps(message))
-        log = self.__publish_method(channel_name=self._name, message=message_enc)
-        self.__logger.info(log)
+        self.__publish_method(key=self._name, value=message)
 
-    def receive(self) -> stream:
-        return self.__subscribe_method(channel_name=self._name)
+    def receive(self):
+        return self.__subscribe_method(key=self._name)

@@ -1,0 +1,24 @@
+{
+    "id": {
+        "value": "ExampleInterfaces"
+    },
+    "kpis": [],
+    "dockerRoleDefinitions": [
+        {
+            "id": "Publish",
+            "imageId": "colmena/testpublish",
+            "hardwareRequirements": [
+                "CAMERA"
+            ],
+            "kpis": []
+        },
+        {
+            "id": "Get",
+            "imageId": "colmena/testget",
+            "hardwareRequirements": [
+                "CPU"
+            ],
+            "kpis": []
+        }
+    ]
+}

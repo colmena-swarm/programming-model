@@ -61,16 +61,34 @@ def build(
     tags = {}
     for role_name in roles:
         tags[role_name] = f"{username}/colmena-{lowercase(role_name)}"
-    write_service_description(
-        f"{service_code_path}/{module_name}/build", tags, roles, service
-    )
+
+    if service.context is not None:
+        for context in service.context.keys():
+            tags[context] = f"{username}/colmena-{lowercase(context)}"
+
+        write_service_description(
+            f"{service_code_path}/{module_name}/build",
+            tags,
+            roles,
+            service,
+            service.context.keys(),
+        )
+    else:
+        write_service_description(
+            f"{service_code_path}/{module_name}/build",
+            tags,
+            roles,
+            service,
+            None,
+        )
+
 
 
 def build_temp_folders(
     module_name: str,
     service_name: str,
     roles: List[str],
-    context: Dict[str, "colmena.Context"],
+    contexts: Dict[str, "colmena.Context"],
     project_path: str,
     service_code_path: str,
 ):
@@ -89,25 +107,34 @@ def build_temp_folders(
         module_name: python module name
         service_name: service class name
         roles: list of role names in the service
-        context: dict with service's context objects
+        contexts: dict with service's context objects
         project_path: path to colmena project
         service_code_path: path to the service code
     """
     os.mkdir(f"{service_code_path}/{module_name}")
     os.mkdir(f"{service_code_path}/{module_name}/build")
+
+    if contexts is not None:
+        os.mkdir(f"{service_code_path}/{module_name}/build/context")
+        for context_key, context_value in contexts.items():
+            path = f"{service_code_path}/{module_name}/build/context/{context_key}"
+            copy_files(path, service_code_path, module_name, project_path)
+            create_main_context(path, module_name, type(context_value).__name__)
+            write_dockerfile(path)
+
     for role_name in roles:
         path = f"{service_code_path}/{module_name}/build/{role_name}"
-        os.mkdir(path)
-        shutil.copyfile(
-            f"{service_code_path}/{module_name}.py", f"{path}/{module_name}.py"
-        )
-        shutil.copytree(f"{project_path}/colmena", f"{path}/colmena")
-        shutil.copy(f"{project_path}/pyproject.toml", path)
-        shutil.copy(f"{project_path}/README.md", path)
+        copy_files(path, service_code_path, module_name, project_path)
         create_main(path, module_name, service_name, role_name)
         write_dockerfile(path)
-        if context is not None:
-            write_context_description(path, context)
+
+
+def copy_files(path: str, service_code_path: str, module_name: str, project_path: str):
+    os.mkdir(path)
+    shutil.copyfile(f"{service_code_path}/{module_name}.py", f"{path}/{module_name}.py")
+    shutil.copytree(f"{project_path}/colmena", f"{path}/colmena")
+    shutil.copy(f"{project_path}/pyproject.toml", path)
+    shutil.copy(f"{project_path}/README.md", path)
 
 
 def create_main(path: str, module_name: str, service_name: str, role_name: str):
@@ -125,6 +152,14 @@ def create_main(path: str, module_name: str, service_name: str, role_name: str):
         print("if __name__ == '__main__':", file=f)
         print(f"\tr = {service_name}.{role_name}({service_name})", file=f)
         print("\tr.execute()", file=f)
+
+
+def create_main_context(path: str, module_name: str, context_name: str):
+    with open(f"{path}/main.py", "w") as f:
+        print(f"from {module_name} import {context_name}\n\n", file=f)
+        print("if __name__ == '__main__':", file=f)
+        print("\tdevice = None # Environment variable, JSON file, TBD.", file=f)
+        print(f"\tr = {context_name}().locate(device)", file=f)
 
 
 def get_service(
@@ -166,6 +201,7 @@ def write_service_description(
     image_ids: Dict[str, str],
     role_names: List[str],
     service: "colmena.Service",
+    context_names: List[str],
 ):
     """
     Writes service description json.
@@ -177,6 +213,14 @@ def write_service_description(
         - service: service class
     """
     output = {"id": {"value": type(service).__name__}}
+
+    if context_names is not None:
+        contexts = []
+        for context in context_names:
+            c = {"id": context, "imageId": image_ids[context]}
+            contexts.append(c)
+        output["dockerContextDefinitions"] = contexts
+
     roles = []
     for role_name in role_names:
         r = {"id": role_name, "imageId": image_ids[role_name]}
@@ -200,13 +244,6 @@ def write_service_description(
         json.dump(output, f, indent=4)
 
 
-def write_context_description(path: str, context: Dict[str, "colmena.Context"]):
-    """Writes context description."""
-    for n, c in context.items():
-        with open(f"{path}/context_{n}.json", "w") as f:
-            print(c.get_json(), file=f)
-
-
 def clean(path: str):
     """Deletes build folders and files."""
     if os.path.isdir(path):
@@ -223,8 +260,16 @@ if __name__ == "__main__":
     import sys
 
     parser = argparse.ArgumentParser()
-    parser.add_argument("--colmena_path", help="Path to the service code")
-    parser.add_argument("--service_code_path", help="Path to the service code")
+    parser.add_argument(
+        "--colmena_path",
+        help="Path to the service code",
+        default="..",
+    )
+    parser.add_argument(
+        "--service_code_path",
+        help="Path to the service code",
+        default="../test/examples",
+    )
     parser.add_argument("--module_name", help="Name of the python module")
     parser.add_argument("--service_name", help="Name of the service class")
     parser.add_argument("--username", help="Docker username")

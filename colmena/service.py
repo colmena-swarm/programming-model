@@ -27,7 +27,7 @@ class Service:
     def __init__(self):
         self.logger = Logger(self).get_logger()
         self._roles = {}
-
+        self._name = type(self).__name__
         self.config = self.get_info()
         if not hasattr(self, "data"):
             self.__data = {}

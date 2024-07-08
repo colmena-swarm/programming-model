@@ -38,18 +38,13 @@ class KPI:
         @wraps(func)
         def logic(self_, *args, **kwargs):
             parent_class_name = self_.__class__.__bases__[0].__name__
-            if parent_class_name == "Service":
-                if not hasattr(self_, "_kpis"):
-                    self_._kpis = []
-                self_._kpis.append({"value": self.__expression})
-            elif parent_class_name == "Role":
-                if not hasattr(self_, "_kpis"):
-                    self_._kpis = []
-                self_._kpis.append({"value": self.__expression})
-            else:
+            if parent_class_name != "Service" and parent_class_name != "Role":
                 raise WrongClassForDecoratorException(
                     class_name=type(self_).__name__, dec_name="kpi"
                 )
+            if not hasattr(self_, "_kpis"):
+                self_._kpis = []
+            self_._kpis.append(self.__expression)
             return func(self_, *args, **kwargs)
 
         try:
@@ -59,5 +54,5 @@ class KPI:
 
         if "kpis" not in logic.config:
             logic.config["kpis"] = []
-        logic.config["kpis"].append({"value": self.__expression})
+        logic.config["kpis"].append(self.__expression)
         return logic
