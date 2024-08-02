@@ -19,6 +19,8 @@
 
 from typing import Callable
 from functools import wraps
+
+from colmena.client import ContextAwareness
 from colmena.utils.exceptions import (
     WrongClassForDecoratorException,
     WrongFunctionForDecoratorException,
@@ -92,8 +94,11 @@ class MetricInterface:
         self.__publish_method = None
         self.__logger = Logger(self).get_logger()
 
+    def _set_context_awareness(self, context_awareness: ContextAwareness):
+        self.__context_awareness = context_awareness
+
     def _set_publish_method(self, func: Callable):
         self.__publish_method = func
 
     def publish(self, value: float):
-        self.__publish_method(key=self.name, value=value)
+        self.__context_awareness.publish(key=self.name, value=value, publisher=self.__publish_method)

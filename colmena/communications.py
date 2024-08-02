@@ -20,11 +20,16 @@
 from typing import TYPE_CHECKING
 
 from colmena.utils.logger import Logger
-from colmena.client import ZenohClient, PyreClient
+from colmena.client import ZenohClient, PyreClient, ContextAwareness
 
 if TYPE_CHECKING:
     import colmena
 
+def get_context_names(role):
+    try:
+        return role._context
+    except AttributeError:
+        return []
 
 class Communications:
     """Class to handle communications using clients."""
@@ -34,6 +39,7 @@ class Communications:
         self.__pyre_client = PyreClient()
         self.__pyre_client.start()
         self.__zenoh_client = ZenohClient(zenoh_root)
+        self.__context_awareness = ContextAwareness(ZenohClient("dockerContextDefinitions"), get_context_names(role))
         self.__initialize(role)
 
     def __initialize(self, role: "colmena.Role"):
@@ -45,6 +51,7 @@ class Communications:
         try:
             for c in role.channels:
                 channel = getattr(role, c)
+                channel._set_context_awareness(self.__context_awareness)
                 channel._set_publish_method(self.__pyre_client.publish)
                 channel._set_subscribe_method(self.__pyre_client.subscribe)
 
@@ -56,6 +63,7 @@ class Communications:
         try:
             for m in role.metrics:
                 metric = getattr(role, m)
+                metric._set_context_awareness(self.__context_awareness)
                 metric._set_publish_method(self.__zenoh_client.publish)
         except AttributeError:
             self.__logger.debug(f"No metric interfaces in role '{type(role).__name__}'")
@@ -63,6 +71,7 @@ class Communications:
         try:
             for d in role.data:
                 data = getattr(role, d)
+                data._set_context_awareness(self.__context_awareness)
                 data._set_publish_method(self.__zenoh_client.put)
                 data._set_get_method(self.__zenoh_client.get)
 

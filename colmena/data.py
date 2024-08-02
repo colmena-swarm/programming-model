@@ -20,6 +20,8 @@
 import pickle
 from typing import Callable
 from functools import wraps
+
+from colmena.client import ContextAwareness
 from colmena.utils.exceptions import (
     WrongClassForDecoratorException,
     WrongFunctionForDecoratorException,
@@ -113,6 +115,9 @@ class DataInterface:
     def scope(self, scope):
         self._scope = scope
 
+    def _set_context_awareness(self, context_awareness: ContextAwareness):
+        self.__context_awareness = context_awareness
+
     def _set_publish_method(self, func: Callable):
         self.__publish_method = func
 
@@ -120,7 +125,7 @@ class DataInterface:
         self.__get_method = func
 
     def publish(self, value: object):
-        self.__publish_method(key=self._name, value=value)
+        self.__context_awareness.publish(key=self._name, value=value, publisher=self.__publish_method)
 
     def get(self) -> bytes:
         value = self.__get_method(key=self._name)

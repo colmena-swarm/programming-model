@@ -23,6 +23,7 @@ dependencies = [
     "eclipse-zenoh",
     "typing",
     "numpy",
-    "zeromq-pyre"
+    "zeromq-pyre",
+    "pytest"
 ]
 

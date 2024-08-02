@@ -19,3 +19,4 @@
 
 from colmena.client.pyre_client import PyreClient
 from colmena.client.zenoh_client import ZenohClient
+from colmena.client.context_awareness import ContextAwareness

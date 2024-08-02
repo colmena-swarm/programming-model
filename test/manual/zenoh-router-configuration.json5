@@ -1,0 +1,17 @@
+{
+  plugins: {
+    rest: {
+      http_port: 8000
+    },
+    storage_manager: {
+      storages: {
+        myhome: {
+          key_expr: "dockerContextDefinitions/**",
+          volume: {
+            id: "memory"
+          }
+        }
+      }
+    }
+  }
+}

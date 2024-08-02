@@ -262,19 +262,21 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "--colmena_path",
-        help="Path to the service code",
-        default="..",
+        help="Path to COLMENA",
+        default=".",
     )
     parser.add_argument(
         "--service_code_path",
         help="Path to the service code",
-        default="../test/examples",
+        default="test/examples",
     )
     parser.add_argument("--module_name", help="Name of the python module")
     parser.add_argument("--service_name", help="Name of the service class")
     parser.add_argument("--username", help="Docker username")
 
     args = parser.parse_args()
+
+    print(f"Building service: {args.service_name}, service location: {args.service_code_path}/{args.service_name}")
     sys.path.append(args.colmena_path)
     build(
         module_name=args.module_name,

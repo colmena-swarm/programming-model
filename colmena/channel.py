@@ -19,6 +19,8 @@
 
 from typing import Callable
 from functools import wraps
+
+from colmena.client import ContextAwareness
 from colmena.utils.exceptions import (
     WrongClassForDecoratorException,
     WrongFunctionForDecoratorException,
@@ -117,6 +119,9 @@ class ChannelInterface:
     def scope(self, scope):
         self._scope = scope
 
+    def _set_context_awareness(self, context_awareness: ContextAwareness):
+        self.__context_awareness = context_awareness
+
     def _set_publish_method(self, func: Callable):
         self.__publish_method = func
 
@@ -124,7 +129,7 @@ class ChannelInterface:
         self.__subscribe_method = func
 
     def publish(self, message: object):
-        self.__publish_method(key=self._name, value=message)
+        self.__context_awareness.publish(key=self._name, value=message, publisher=self.__publish_method)
 
     def receive(self):
         return self.__subscribe_method(key=self._name)

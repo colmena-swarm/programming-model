@@ -14,6 +14,7 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 #
+import time
 
 # -*- coding: utf-8 -*-
 
@@ -43,12 +44,13 @@ class ZenohClient:
     def publish(self, key: str, value: object):
         try:
             self._publishers[key].put(value)
+            self._logger.debug(f"Published key: '{self._root}/{key}', value: '{value}'")
         except KeyError:
             self._publishers[key] = self.__session.declare_publisher(
                 f"{self._root}/{key}"
             )
-            self._publishers[key].put(value)
-        self._logger.debug(f"New object published to '{self._root}/{key}'")
+            self._logger.debug(f"New publisher. key: '{self._root}/{key}'")
+            self.publish(key, value)
         self.__session.close()
 
     def subscribe(self, key: str):
@@ -59,6 +61,11 @@ class ZenohClient:
                 f"{self._root}/{key}", zenoh.Queue(), reliability=Reliability.RELIABLE()
             )
             return self._subscribers[key]
+
+    def subscribe_with_handler(self, key: str, handler):
+        subscription = self.__session.declare_subscriber(f"{self._root}/{key}", handler)
+        self._subscribers[key] = subscription
+        self._logger.debug(f"New subscription. key: '{self._root}/{key}'")
 
     def put(self, key: str, value: bytes):
         self.__session.put(f"{self._root}/{key}", value)
@@ -73,4 +80,5 @@ class ZenohClient:
                 self.__session.close()
                 return reply
             except IndexError:
-                self._logger.debug("Didn't get replies. Trying again.")
+                self._logger.debug(f"could not get from zenoh. key: {key}")
+                time.sleep(1)

@@ -72,7 +72,7 @@ class PyreClient(threading.Thread):
                     peer = parts.pop(0)
                     msg_name = parts.pop(0).decode("utf-8")
                     message = parts.pop(0).decode("utf-8")
-                    print(f"message received: {msg_type} {peer} {msg_name} {message}")
+                    self._logger.debug(f"message received: {msg_type} {peer} {msg_name} {message}")
                     if msg_type == "WHISPER":
                         deserialized_message = pickle.loads(
                             codecs.decode(message.encode(), "base64")
