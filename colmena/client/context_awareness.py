@@ -20,7 +20,7 @@
 import json
 
 from colmena.client.zenoh_client import ZenohClient
-from colmena.utils.logger import Logger
+from colmena.logger import Logger
 
 
 def decode_zenoh_value(message):

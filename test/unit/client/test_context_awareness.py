@@ -1,3 +1,4 @@
+import json
 import unittest
 
 from colmena.client.context_awareness import ContextAwareness
@@ -9,6 +10,10 @@ class TestPublication:
         self.payload = payload
 
 
+def to_json(value):
+    return json.dumps({"value": value}, indent=4)
+
+
 class TestContextAwareness(unittest.TestCase):
 
     def setUp(self):
@@ -16,18 +21,18 @@ class TestContextAwareness(unittest.TestCase):
         self.zenoh_client = Mock()
         self.zenoh_client.get = Mock()
         self.zenoh_client.subscribe = Mock()
-        self.zenoh_client.get.return_value = "initial".encode()
+        self.zenoh_client.get.return_value = (to_json("initial")).encode()
 
     def test_subscribes_to_context_updates_and_uses_scope_during_publish(self):
         self.context_awareness = ContextAwareness(self.zenoh_client, ["test_context"])
         args, _ = self.zenoh_client.subscribe_with_handler.call_args
         subscription_handler = args[1]
 
-        subscription_handler(TestPublication("first".encode()))
+        subscription_handler(TestPublication(to_json("first").encode()))
         self.context_awareness.publish("context", "1", self.publish)
         self.publish.assert_called_with("context/first", "1")
 
-        subscription_handler(TestPublication("second".encode()))
+        subscription_handler(TestPublication(to_json("second").encode()))
         self.context_awareness.publish("context", "2", self.publish)
         self.publish.assert_called_with("context/second", "2")
         self.assertEqual(self.publish.call_count, 2)

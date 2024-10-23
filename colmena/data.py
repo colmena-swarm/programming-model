@@ -20,14 +20,13 @@
 import pickle
 from typing import Callable
 from functools import wraps
-
 from colmena.client import ContextAwareness
-from colmena.utils.exceptions import (
+from colmena.exceptions import (
     WrongClassForDecoratorException,
     WrongFunctionForDecoratorException,
     DataNotExistException,
 )
-from colmena.utils.logger import Logger
+from colmena.logger import Logger
 
 
 class Data:
@@ -54,10 +53,10 @@ class Data:
                 parent_class_name = self_.__class__.__bases__[0].__name__
 
                 if parent_class_name == "Role":
-                    service_config = args[0].__init__.config
                     try:
+                        service_config = args[0].__init__.config
                         scope = service_config["data"][self.__name]
-                    except KeyError:
+                    except (AttributeError, KeyError):
                         raise DataNotExistException(data_name=self.__name)
 
                     try:

@@ -27,9 +27,9 @@ from colmena.requirements import Requirements
 from colmena.role import Role
 from colmena.service import Service
 from colmena.communications import Communications
-from colmena.utils.logger import Logger
-from colmena.client import ZenohClient, PyreClient, ContextAwareness
-from colmena.utils.exceptions import (
+from colmena.logger import Logger
+from colmena.client import ZenohClient, PyreClient
+from colmena.exceptions import (
     ChannelNotExistException,
     DataNotExistException,
     MetricNotExistException,

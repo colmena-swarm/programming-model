@@ -19,14 +19,14 @@
 
 import json
 from functools import wraps
-from colmena.utils.exceptions import (
+from colmena.exceptions import (
     FunctionNotImplementedException,
     AttributeNotExistException,
     WrongFunctionForDecoratorException,
     WrongClassForDecoratorException,
 )
 from typing import Callable
-from colmena.utils.logger import Logger
+from colmena.logger import Logger
 
 
 class Context:

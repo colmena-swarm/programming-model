@@ -19,14 +19,13 @@
 
 from typing import Callable
 from functools import wraps
-
 from colmena.client import ContextAwareness
-from colmena.utils.exceptions import (
+from colmena.exceptions import (
     WrongClassForDecoratorException,
     WrongFunctionForDecoratorException,
     ChannelNotExistException,
 )
-from colmena.utils.logger import Logger
+from colmena.logger import Logger
 
 
 class Channel:
@@ -68,10 +67,10 @@ class Channel:
         return logic
 
     def role_decorator_call(self, *args, **kwargs):
-        service_config = args[0].__init__.config
         try:
+            service_config = args[0].__init__.config
             scope = service_config["channels"][self.__name]
-        except KeyError as exc:
+        except (AttributeError, KeyError) as exc:
             raise ChannelNotExistException(channel_name=self.__name) from exc
 
         try:

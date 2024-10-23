@@ -20,7 +20,7 @@ import time
 
 from zenoh import Reliability
 import zenoh
-from colmena.utils.logger import Logger
+from colmena.logger import Logger
 
 
 class ZenohClient:

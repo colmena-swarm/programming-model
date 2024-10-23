@@ -18,11 +18,11 @@
 # -*- coding: utf-8 -*-
 
 from typing import Callable
-from colmena.utils.exceptions import (
+from colmena.exceptions import (
     WrongClassForDecoratorException,
     WrongFunctionForDecoratorException,
 )
-from colmena.utils.logger import Logger
+from colmena.logger import Logger
 
 
 class Requirements:

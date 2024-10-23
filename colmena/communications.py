@@ -19,7 +19,7 @@
 
 from typing import TYPE_CHECKING
 
-from colmena.utils.logger import Logger
+from colmena.logger import Logger
 from colmena.client import ZenohClient, PyreClient, ContextAwareness
 
 if TYPE_CHECKING:
@@ -34,8 +34,10 @@ def get_context_names(role):
 class Communications:
     """Class to handle communications using clients."""
 
-    def __init__(self, role: "colmena.Role", zenoh_root: str):
+    def __init__(self):
         self.__logger = Logger(self).get_logger()
+
+    def start(self, role: "colmena.Role", zenoh_root: str):
         self.__pyre_client = PyreClient()
         self.__pyre_client.start()
         self.__zenoh_client = ZenohClient(zenoh_root)
@@ -48,6 +50,7 @@ class Communications:
         Parameter:
             - role -- Role object.
         """
+
         try:
             for c in role.channels:
                 channel = getattr(role, c)
@@ -77,3 +80,6 @@ class Communications:
 
         except AttributeError:
             self.__logger.debug(f"No data interfaces in role '{type(role).__name__}'")
+
+    def stop(self):
+        self.__pyre_client.stop()

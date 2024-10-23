@@ -19,14 +19,13 @@
 
 from typing import Callable
 from functools import wraps
-
 from colmena.client import ContextAwareness
-from colmena.utils.exceptions import (
+from colmena.exceptions import (
     WrongClassForDecoratorException,
     WrongFunctionForDecoratorException,
     MetricNotExistException,
 )
-from colmena.utils.logger import Logger
+from colmena.logger import Logger
 
 
 class Metric:
@@ -51,11 +50,14 @@ class Metric:
             def logic(self_, *args, **kwargs):
                 parent_class_name = self_.__class__.__bases__[0].__name__
                 if parent_class_name == "Role":
-                    service_config = args[0].__init__.config
-                    if (
-                        "metrics" not in service_config
-                        or self.__name not in service_config["metrics"]
-                    ):
+                    try:
+                        service_config = args[0].__init__.config
+                        if (
+                            "metrics" not in service_config
+                            or self.__name not in service_config["metrics"]
+                        ):
+                            raise MetricNotExistException(self.__name)
+                    except AttributeError:
                         raise MetricNotExistException(self.__name)
 
                     try:
@@ -90,7 +92,7 @@ class Metric:
 
 class MetricInterface:
     def __init__(self, name):
-        self.name = name
+        self._name = name
         self.__publish_method = None
         self.__logger = Logger(self).get_logger()
 
@@ -101,4 +103,4 @@ class MetricInterface:
         self.__publish_method = func
 
     def publish(self, value: float):
-        self.__context_awareness.publish(key=self.name, value=value, publisher=self.__publish_method)
+        self.__context_awareness.publish(key=self._name, value=value, publisher=self.__publish_method)

@@ -19,8 +19,8 @@
 
 from typing import Callable
 from functools import wraps
-from colmena.utils.exceptions import WrongClassForDecoratorException
-from colmena.utils.logger import Logger
+from colmena.exceptions import WrongClassForDecoratorException
+from colmena.logger import Logger
 
 
 class KPI:

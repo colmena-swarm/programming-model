@@ -17,14 +17,9 @@
 
 # -*- coding: utf-8 -*-
 
-import configparser
-import multiprocessing
 import os
-import time
 import filecmp
-from collections.abc import Callable
-from inspect import isclass
-from typing import List, TYPE_CHECKING
+from typing import List
 
 import pytest
 
@@ -35,13 +30,10 @@ from scripts.colmena_build import (
     get_service,
     build,
 )
-from colmena.utils.exceptions import WrongServiceClassName
-
-if TYPE_CHECKING:
-    import colmena
+from colmena.exceptions import WrongServiceClassName
 
 
-class TestExamples:
+class TestBuild:
 
     @pytest.fixture(autouse=True)
     def setup_folder(self, folder):
@@ -76,7 +68,7 @@ class TestExamples:
             service_name=service_name,
             roles=roles,
             contexts=service.context,
-            project_path="../",
+            project_path="../../",
             service_code_path=self.folder,
         )
         build_path = f"{self.folder}/{module_name}/build"
@@ -114,46 +106,6 @@ class TestExamples:
             f"{self.folder}/{module_name}.json",
         )
 
-
-    def test_roles_in_services(self):
-        """Executes all roles from all services."""
-        files = self.get_files()
-        for f in files:
-            module_name, service_name = self.get_module_and_service_names(f)
-            service = get_service(module_name, service_name, service_code_path=self.folder)
-            self.execute_roles_in_service(service)
-
-    def execute_roles_in_service(self, service_class: "colmena.Service"):
-        """
-        Executes all roles from one service.
-        Each role is in a separate proces (using multiprocessing).
-
-        Attributes:
-            service_class: the class of the service (must be Callable).
-        """
-        processes = []
-        for role in self.get_roles(service_class):
-            role_class = getattr(service_class, role)
-            process = multiprocessing.Process(
-                target=self.execute_role, args=(role_class, service_class)
-            )
-            process.start()
-            processes.append(process)
-        time.sleep(3)
-        for process in processes:
-            process.kill()
-
-    def execute_role(self, role_class: Callable, service: "colmena.Service"):
-        """
-        Executes one role.
-
-        role_class: the class of the role (must be Callable).
-        """
-        role = role_class(service)
-        role.execute()
-        time.sleep(2)
-        role.stop()
-
     def test_build(self):
         """
         Builds all services,
@@ -171,13 +123,13 @@ class TestExamples:
         build(
             module_name=module_name,
             service_name=service_name,
-            project_path="../",
+            project_path="../../",
             service_code_path=self.folder,
             username="colmena",
         )
 
     def get_files(self) -> List:
-        """Gets all python files from the folder examples/."""
+        """Gets all python files from the folder example/."""
         files = []
         for f in os.listdir(self.folder):
             if f.endswith(".py"):
@@ -190,10 +142,3 @@ class TestExamples:
         name = module_name.replace("_", " ").split()[1]
         service_name = f"Example{name.capitalize()}"
         return module_name, service_name
-
-    def get_roles(self, service: "colmena.Service"):
-        roles = []
-        for name, value in service.__dict__.items():
-            if isclass(value):
-                roles.append(name)
-        return roles

@@ -19,8 +19,8 @@
 
 import os
 from colmena import MetricInterface
-from colmena.utils.exceptions import FunctionNotImplementedException
-from colmena.utils.logger import Logger
+from colmena.exceptions import FunctionNotImplementedException
+from colmena.logger import Logger
 from colmena.communications import Communications
 
 
@@ -66,7 +66,7 @@ class Role:
             MetricInterface(f"{_id}_{self.get_hostname()}_{self._name}"),
         )
 
-        self.comms = Communications(self, self._service_name)
+        self.comms = Communications()
 
     @property
     def kpis(self):
@@ -89,13 +89,16 @@ class Role:
         """
         Function to execute a role by running its behavior function.
         """
+        self.comms.start(self, self._service_name)
         self.logger.info(f"Executing role '{self._name}'")
         self._running = True
         self.behavior()
 
     def stop(self):
+        self._running = False
         for process in self._processes:
-            process.terminate()
+            process.join()
+        self.comms.stop()
         self.logger.info(f"Role '{self._name}' terminated.")
 
     def get_hostname(self):

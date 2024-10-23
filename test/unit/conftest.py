@@ -21,7 +21,7 @@ import pytest
 
 
 def pytest_addoption(parser):
-    parser.addoption("--folder", action="store", default="./examples", help="Folder with the application code files.")
+    parser.addoption("--folder", action="store", default="./resources", help="Folder with the application code files.")
 
 
 @pytest.fixture
