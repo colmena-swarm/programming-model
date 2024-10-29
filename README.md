@@ -112,7 +112,7 @@ To get started with the COLMENA programming model, follow these steps:
 
 4. Build the service:
     ``` bash
-    python3 -m colmena_build \
+    python3 -m scripts/colmena_build \
         --colmena_path="<this_repository_root>" \
         --service_code_path="<path_to_the_service_root>" \
         --module_name="<service_modulename>" \

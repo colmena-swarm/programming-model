@@ -268,7 +268,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--service_code_path",
         help="Path to the service code",
-        default="test/examples",
+        default="examples",
     )
     parser.add_argument("--module_name", help="Name of the python module")
     parser.add_argument("--service_name", help="Name of the service class")

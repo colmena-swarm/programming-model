@@ -44,8 +44,8 @@ class TestBehavior:
     def test_persistent_and_async(self):
         persistent_role = ServiceWithRoleBehaviors.PersistentRole(ServiceWithRoleBehaviors)
         async_role = ServiceWithRoleBehaviors.AsyncRole(ServiceWithRoleBehaviors)
-        persistent_role.execute()
         async_role.execute()
-        wait().at_most(2, SECOND).until_async(lambda: async_role.iterations > 0)
+        persistent_role.execute()
+        wait().at_most(2, SECOND).until(lambda: async_role.iterations > 1)
         persistent_role.stop()
         async_role.stop()

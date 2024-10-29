@@ -20,6 +20,7 @@
 import threading
 from typing import Callable, TYPE_CHECKING
 from functools import wraps
+
 from colmena.exceptions import WrongFunctionForDecoratorException
 from colmena.logger import Logger
 
@@ -77,20 +78,20 @@ class Async:
             role: "colmena.Role",
     ):
         self.__logger.debug("Running async")
-        self.call_async(channel.receive(), func, name, num_executions, role.running)
+        self.call_async(channel.receive(), func, name, num_executions, role)
 
-    def call_async(
+    def call_async(self,
             sub,
             func: Callable,
             name: str,
             num_executions: "colmena.MetricInterface",
-            running: bool
+            role
     ):
-        while running:
-            for sample in sub.receive():
-                message = sample
-                func({name: message})
+        while role.running:
+            for message in sub.receive():
+                func({name: message.value})
                 num_executions.publish(1)
+                sub.ack(message)
 
 
 class Persistent:
