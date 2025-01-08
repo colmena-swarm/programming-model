@@ -4,6 +4,8 @@ import uuid
 
 import numpy as np
 
+from colmena.logger import Logger
+
 
 def explore(current_peers):
     return random.choice(current_peers)
@@ -11,7 +13,7 @@ def explore(current_peers):
 
 class LeastLatencySelector:
     def __init__(self, epsilon=0.1, alpha=0.9):
-        self._logger = logging.getLogger("colmena")
+        self._logger = Logger(self).get_logger()
         self.epsilon = epsilon
         self.alpha = alpha
         self.latency_estimates = {}  # estimated latency for each recipient

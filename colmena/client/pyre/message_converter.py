@@ -27,8 +27,8 @@ def pyre_message_type(pyre_message_parts: list[bytes]) -> str:
 
 def parse(pyre_message_parts: list[bytes]) -> PyreMessage:
     return PyreMessage(
-        pyre_message_parts.pop(0).decode("utf-8"),  #message_type
-        uuid.UUID(bytes=pyre_message_parts.pop(0)),  #peer
-        pyre_message_parts.pop(0).decode("utf-8"),  #message_name
-        pyre_message_parts.pop(0).decode("utf-8")   #message
+        pyre_message_parts.pop(0).decode("utf-8"),      #message_type
+        uuid.UUID(bytes=pyre_message_parts.pop(0)),     #peer
+        pyre_message_parts.pop(0).decode("utf-8"),      #message_name
+        pyre_message_parts.pop(0).decode("utf-8")       #message
     )
