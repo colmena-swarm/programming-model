@@ -27,7 +27,14 @@ from typing import Dict, List, Callable, TYPE_CHECKING
 if TYPE_CHECKING:
     import colmena
 
-cwd = os.getcwd()
+
+def get_colmena_path():
+    import os
+    import sys
+    script = os.path.realpath(sys.argv[0])
+    scripts_folder = os.path.dirname(script)
+    colmena_folder = os.path.dirname(scripts_folder)
+    return colmena_folder
 
 
 def build(
@@ -263,7 +270,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--colmena_path",
         help="Path to COLMENA",
-        default=".",
+        default=get_colmena_path(),
     )
     parser.add_argument(
         "--service_code_path",
