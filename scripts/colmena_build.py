@@ -198,6 +198,9 @@ def write_dockerfile(path: str):
     with open(f"{path}/Dockerfile", "w") as f:
         print("FROM python:3.9.18-slim-bookworm", file=f)
         print("COPY . /home", file=f)
+        print("RUN apt-get update && \\", file=f)
+        print("apt-get upgrade -y && \\", file=f)
+        print("apt-get install -y git", file=f)
         print("WORKDIR /home", file=f)
         print("RUN python3 -m pip install .", file=f)
         print("ENTRYPOINT python3 -m main", file=f)

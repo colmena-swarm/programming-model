@@ -14,6 +14,8 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 #
+import logging
+import os
 from dataclasses import dataclass
 from datetime import datetime
 # -*- coding: utf-8 -*-
@@ -48,6 +50,9 @@ class PyreClient(threading.Thread):
     def __init__(self):
         super().__init__()
         self._logger = Logger(self).get_logger()
+        logger = logging.getLogger("pyre")
+        logger.setLevel(logging.DEBUG)
+        logger.addHandler(logging.StreamHandler())
         self.groups = []
         self.message_receivers = {}
         self._publishers = {}
@@ -58,8 +63,18 @@ class PyreClient(threading.Thread):
         self.ack_socket = self.ctx.socket(zmq.PAIR)
         self.ack_socket.connect("inproc://ack")
         self.pyre = Pyre()
+        self.set_peer_discovery_interface(self.pyre)
         self.pyre.start()
         self.running = True
+
+    def set_peer_discovery_interface(self, pyre):
+        try:
+            self._logger.info(f"discovering peers on {os.environ['PEER_DISCOVERY_INTERFACE']}")
+            pyre.set_interface(os.environ["PEER_DISCOVERY_INTERFACE"])
+        except KeyError:
+            self._logger.info("no interface set for peer discovery, using default...")
+            return
+
 
     def run(self):
         self._logger.debug(f"pyre started. id: {self.pyre.uuid()}")
