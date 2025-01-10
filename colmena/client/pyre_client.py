@@ -14,7 +14,6 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 #
-import logging
 import os
 from dataclasses import dataclass
 from datetime import datetime
@@ -50,9 +49,6 @@ class PyreClient(threading.Thread):
     def __init__(self):
         super().__init__()
         self._logger = Logger(self).get_logger()
-        logger = logging.getLogger("pyre")
-        logger.setLevel(logging.DEBUG)
-        logger.addHandler(logging.StreamHandler())
         self.groups = []
         self.message_receivers = {}
         self._publishers = {}
