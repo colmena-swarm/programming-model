@@ -1,0 +1,15 @@
+Following are change highlights associated with official releases.  Important
+bug fixes are all mentioned, but some internal enhancements are omitted here for
+brevity.  Much more detail can be found in the git revision history:
+
+[unreleased] - yyyy-mm
+Added:
+    * Zenoh and zyre for communications
+Removed:
+    * Roles no longer contact a DCP
+Bugfixes:
+
+
+[0.0.1] - 2024-11 
+First release of the COLMENA programming model
+

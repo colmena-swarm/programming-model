@@ -14,10 +14,12 @@ The repository is organized into the following directories and files:
 
 ### Directories
 - **colmena**: Contains the python library with the programming model and abstractions.
+- **examples**: Example applications used for testing.
 - **scripts**: Scripts to create a COLMENA service bundle from the application source code.
-- **test**: Tests and example applications used for testing.
+- **test**: Scripts and configuration files used for testing.
 ### Files
 - **.gitignore**: Specifies files and directories to be ignored by Git.
+- **changeLog**: Change highlights associated with official releases.
 - **CODE_OF_CONDUCT.md**: Outlines the expected behavior and guidelines for participants within the project's community. 
 - **CONTRIBUTING.md**: Overview of the repository, setup instructions, and basic usage examples.
 - **Dockerfile**: File used to create a Docker image for the deployment tool.
