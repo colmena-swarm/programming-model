@@ -125,7 +125,6 @@ class TestBuild:
             service_name=service_name,
             project_path="../../",
             service_code_path=self.folder,
-            username="colmena",
         )
 
     def get_files(self) -> List:

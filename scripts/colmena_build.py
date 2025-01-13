@@ -42,7 +42,6 @@ def build(
     service_name: str,
     project_path: str,
     service_code_path: str,
-    username: str,
 ):
     """
     Creates the folder with the build files, including source code, service description, and Dockerfile.
@@ -52,7 +51,6 @@ def build(
         service_name: service class name
         project_path: path to the colmena project
         service_code_path: path to the service code
-        username: DockerHub user
     """
     clean(f"{service_code_path}/{module_name}")
     service = get_service(module_name, service_name, service_code_path)()
@@ -67,11 +65,11 @@ def build(
     )
     tags = {}
     for role_name in roles:
-        tags[role_name] = f"{username}/colmena-{lowercase(role_name)}"
+        tags[role_name] = f"colmena-{lowercase(role_name)}"
 
     if service.context is not None:
         for context in service.context.keys():
-            tags[context] = f"{username}/colmena-{lowercase(context)}"
+            tags[context] = f"colmena-{lowercase(context)}"
 
         write_service_description(
             f"{service_code_path}/{module_name}/build",
@@ -282,7 +280,6 @@ if __name__ == "__main__":
     )
     parser.add_argument("--module_name", help="Name of the python module")
     parser.add_argument("--service_name", help="Name of the service class")
-    parser.add_argument("--username", help="Docker username")
 
     args = parser.parse_args()
 
@@ -293,5 +290,4 @@ if __name__ == "__main__":
         service_name=args.service_name,
         project_path=args.colmena_path,
         service_code_path=args.service_code_path,
-        username=args.username,
     )
