@@ -7,13 +7,13 @@ allow-direct-references = true
 
 [project]
 name = "colmena"
-version = "0.0.1"
+version = "0.1"
 authors = [
     {name="Workflows and Distributed Computing group"},
 ]
 
 
-description = "Colmena swarm computing library"
+description = "COLMENA Programming model library"
 readme = "README.md"
 requires-python = ">=3.8"
 classifiers = [
