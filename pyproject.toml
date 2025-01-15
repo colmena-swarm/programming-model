@@ -26,7 +26,7 @@ dependencies = [
     "eclipse-zenoh==0.10.1rc0",
     "typing",
     "numpy",
-    "zeromq-pyre@git+https://github.com/philrhc/pyre.git",
+    "zeromq-pyre@git+https://github.com/zeromq/pyre.git",
     "pytest"
 ]
 
