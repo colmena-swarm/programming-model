@@ -118,8 +118,7 @@ To get started with the COLMENA programming model, follow these steps:
         --colmena_path="<this_repository_root>" \
         --service_code_path="<path_to_the_service_root>" \
         --module_name="<service_modulename>" \
-        --service_name="<service_classname>" \
-        --username=<dockerhub_user>
+        --service_name="<service_classname>" 
     ```
     The outcome of the building process will be left at <path_to_the_service_root>/<service_modulename>/build.
 
@@ -135,8 +134,7 @@ Alternatively, the service can also be created using docker:
 		-v <path-to-application>:/app \
 		colmenaswarm/programming-model:latest \
 		--module_name=<service_modulename> \
-		--service_name=<service_classname> \
-        --username=<dockerhub_user>
+		--service_name=<service_classname> 
 	```
 
 ## Testing
