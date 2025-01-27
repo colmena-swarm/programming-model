@@ -4,11 +4,19 @@ brevity.  Much more detail can be found in the git revision history:
 
 [unreleased] - yyyy-mm
 Added:
-    * Zenoh and zyre for communications
 Removed:
-    * Roles no longer contact a DCP
 Bugfixes:
 
+[0.1] - 2025-01
+Added:
+    * Zenoh and zyre for communications
+    * User can specify network interface for peer discovery
+    * Unit tests
+Removed:
+    * Roles no longer contact a DCP
+    * Dockerhub user removed
+Bugfixes:
+    * Pin zenoh version
 
 [0.0.1] - 2024-11 
 First release of the COLMENA programming model
