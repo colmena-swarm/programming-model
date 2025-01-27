@@ -27,7 +27,14 @@ FROM python:3.9.18-slim-bookworm
 
     COPY . /colmena
     WORKDIR /colmena
-    RUN python3 -m pip install --no-cache-dir .
+
+    RUN apt-get update && \
+        apt-get install -y --no-install-recommends \
+            git=1:2.39.5-0+deb12u2 && \
+        python3 -m pip install --no-cache-dir . && \
+        apt-get remove -y git && \        
+        rm -rf /var/lib/apt/lists/*
+    
 
     WORKDIR /colmena/scripts
     ENTRYPOINT ["python3", "-m", "colmena_build", "--colmena_path=/colmena", "--service_code_path=/app"]
