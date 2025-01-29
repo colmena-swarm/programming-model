@@ -7,7 +7,7 @@ Added:
 Removed:
 Bugfixes:
 
-[0.1] - 2025-01
+[0.1.0] - 2025-01
 Added:
     * Zenoh and zyre for communications
     * User can specify network interface for peer discovery

@@ -7,7 +7,7 @@ allow-direct-references = true
 
 [project]
 name = "colmena"
-version = "0.1"
+version = "0.1.0"
 authors = [
     {name="Workflows and Distributed Computing group"},
 ]
