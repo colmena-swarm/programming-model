@@ -2,10 +2,17 @@ Following are change highlights associated with official releases.  Important
 bug fixes are all mentioned, but some internal enhancements are omitted here for
 brevity.  Much more detail can be found in the git revision history:
 
-[unreleased] - yyyy-mm
+[0.1.1] - 2025-01
 Added:
+    * version decorator
+    * dependencies decorator
+    * start and stop methods to execute when a role starts/stops running on the device
+    * using pyproject to install the role software in the images
 Removed:
 Bugfixes:
+Improvements:
+    * code refactoring
+    * simplified parameters for the building tool
 
 [0.1.0] - 2025-01
 Added:
