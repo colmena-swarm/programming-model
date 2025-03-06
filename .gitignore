@@ -403,5 +403,8 @@ FodyWeavers.xsd
 # JetBrains Rider
 *.sln.iml
 
+# Python dist
+dist/colmena*
+
 # built examples
 examples/*/

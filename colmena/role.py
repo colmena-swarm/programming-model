@@ -18,10 +18,10 @@
 # -*- coding: utf-8 -*-
 
 import os
-from colmena import MetricInterface
+from colmena import MetricInterface, ChannelInterface, DataInterface
 from colmena.exceptions import FunctionNotImplementedException
 from colmena.logger import Logger
-from colmena.communications import Communications
+from colmena.implementations import Communications
 
 
 class Role:
@@ -34,25 +34,30 @@ class Role:
         self._service_name = args[0].__name__.lower()
         try:
             self.channels = []
-            for name, channel in kwargs["channels"].items():
-                self.channels.append(name)
-                setattr(self, name, channel)
+            for channel_name, channel_scope in kwargs["channels"].items():
+                self.channels.append(channel_name)
+                channel_interface = ChannelInterface(channel_name)
+                channel_interface.scope = channel_scope
+                setattr(self, channel_name, channel_interface)
         except KeyError:
             self.logger.debug(f"No channels in role {type(self).__name__}")
 
         try:
             self.data = []
-            for name, data in kwargs["data"].items():
-                self.data.append(name)
-                setattr(self, name, data)
+            for data_name, data_scope in kwargs["data"].items():
+                self.data.append(data_name)
+                data_interface = DataInterface(data_name)
+                data_interface.scope = data_scope
+                setattr(self, data_name, data_interface)
         except KeyError:
             self.logger.debug(f"No data in role {type(self).__name__}")
 
         try:
             self.metrics = []
-            for name, metric in kwargs["metrics"].items():
-                self.metrics.append(name)
-                setattr(self, name, metric)
+            for metric_name in kwargs["metrics"]:
+                self.metrics.append(metric_name)
+                metric_interface = MetricInterface(metric_name)
+                setattr(self, metric_name, metric_interface)
         except KeyError:
             self.logger.debug(f"No metrics in role {type(self).__name__}")
 
@@ -85,19 +90,36 @@ class Role:
         """
         raise FunctionNotImplementedException(func_name="behavior", class_name="Role")
 
+    def start(self):
+        """
+        Function to be executed before the role starts.
+        """
+        pass
+
+    def stop(self):
+        """
+        Function to be executed before the role stops.
+        """
+        pass
+
     def execute(self):
         """
         Function to execute a role by running its behavior function.
         """
+        self.start()
         self.comms.start(self, self._service_name)
         self.logger.info(f"Executing role '{self._name}'")
         self._running = True
         self.behavior()
 
-    def stop(self):
+    def terminate(self):
         self._running = False
-        for process in self._processes:
-            process.join()
+        self.stop()
+        try:
+            for process in self._processes:
+                process.join()
+        except AttributeError:
+            self.logger.info("Role already stopped.")
         self.comms.stop()
         self.logger.info(f"Role '{self._name}' terminated.")
 

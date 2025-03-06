@@ -19,9 +19,7 @@
 
 from unittest.mock import Mock
 
-from colmena import Role, Service
-from colmena.metric import Metric
-
+from colmena import Role, Service, Metric
 from colmena.exceptions import MetricNotExistException
 
 
@@ -77,6 +75,7 @@ class TestMetric:
         zenoh_client = Mock()
         pyre_client = Mock()
         context_awareness = Mock()
+        context_awareness.context_aware_publish = Mock()
 
         role.comms._Communications__context_awareness = context_awareness
         role.comms._Communications__pyre_client = pyre_client
@@ -86,6 +85,7 @@ class TestMetric:
 
         metric_interface = role.example_metric
         metric_interface.publish(0)
-        kwargs = context_awareness.publish.call_args.kwargs
-        assert kwargs['key'] == 'example_metric'
-        assert kwargs['value'] == 0
+        context_awareness.context_aware_publish.assert_called_once()
+        args = context_awareness.context_aware_publish.call_args.args
+        assert args[0] == 'example_metric'
+        assert args[1] == 0

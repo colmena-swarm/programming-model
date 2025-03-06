@@ -14,6 +14,9 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 #
+
+# -*- coding: utf-8 -*-
+
 import os
 from dataclasses import dataclass
 from datetime import datetime
@@ -24,7 +27,7 @@ import threading
 import zmq
 from zmq import ZMQError
 
-from colmena.client.pyre import message_converter, receiver_selector
+from colmena.implementations.pyre import message_converter, receiver_selector
 from colmena.logger import Logger
 from multiprocessing import Queue
 from pyre.pyre import Pyre

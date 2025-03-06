@@ -19,9 +19,7 @@
 
 from unittest.mock import Mock
 
-from colmena import Role, Service
-from colmena.channel import Channel
-from colmena.exceptions import ChannelNotExistException
+from colmena import Role, Service, Channel, ChannelNotExistException
 
 
 class ServiceWithChannelDec(Service):
@@ -75,6 +73,7 @@ class TestChannel:
 
         pyre_client = Mock()
         context_awareness = Mock()
+        context_awareness.context_aware_publish = Mock()
 
         role.comms._Communications__context_awareness = context_awareness
         role.comms._Communications__pyre_client = pyre_client
@@ -82,11 +81,11 @@ class TestChannel:
 
         channel_interface = role.example_channel
         channel_interface.publish(0)
-        kwargs = context_awareness.publish.call_args.kwargs
-        assert kwargs['key'] == 'example_channel'
-        assert kwargs['value'] == 0
+        context_awareness.context_aware_publish.assert_called_once()
+        args = context_awareness.context_aware_publish.call_args.args
+        assert args[0] == 'example_channel'
+        assert args[1] == 0
 
         channel_interface.receive()
         kwargs = pyre_client.subscribe.call_args.kwargs
         assert kwargs['key'] == 'example_channel'
-

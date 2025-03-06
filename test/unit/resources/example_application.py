@@ -28,11 +28,12 @@ from colmena import (
     Metric,
     Persistent,
     Async,
-    KPI,
+    KPI, Dependencies, Version
 )
 
 
 class CompanyPremises(Context):
+    @Dependencies("numpy")
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.structure = {
@@ -46,18 +47,20 @@ class CompanyPremises(Context):
 
 
 class ExampleApplication(Service):
-    @Context(class_ref=CompanyPremises, name="company_premises")
-    @Channel(name="buffer", scope=" ")
-    @Channel(name="result", scope=" ")
-    @Metric(name="sensed")
-    @Metric(name="processed")
+    @Context("company_premises", class_ref=CompanyPremises)
+    @Channel("buffer", " ")
+    @Channel("result", " ")
+    @Metric("sensed")
+    @Metric("processed")
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
     class Sensing(Role):
-        @Context(name="company_premises", scope="*.*.lobby")
-        @Channel(name="buffer")
-        @Metric(name="sensed")
+        @Version("0.1")
+        @Dependencies("numpy")
+        @Context("company_premises", "*.*.lobby")
+        @Channel("buffer")
+        @Metric("sensed")
         @Requirements("CAMERA")
         def __init__(self, *args, **kwargs):
             super().__init__(*args, **kwargs)
@@ -71,9 +74,10 @@ class ExampleApplication(Service):
             time.sleep(1)
 
     class Processing(Role):
-        @Channel(name="result")
-        @Channel(name="buffer")
-        @Metric(name="processed")
+        @Dependencies("numpy")
+        @Channel("result")
+        @Channel("buffer")
+        @Metric("processed")
         @Requirements("CPU")
         @KPI("buffer_queue_size[100000000s] < 10")
         def __init__(self, *args, **kwargs):

@@ -18,8 +18,9 @@
 # -*- coding: utf-8 -*-
 
 from typing import List
-from colmena.logger import Logger
 
+from colmena.logger import Logger
+from colmena import Role
 
 class Service:
     """Parent class for services defined in COLMENA."""
@@ -59,7 +60,13 @@ class Service:
         :return: Dict with configuration
         """
         config = {"kpis": self.kpis}
-        for role_name in list(type(self).__dict__.keys())[2:-1]:
+
+        role_names = []
+        for name, attr in type(self).__dict__.items():
+            if isinstance(attr, type) and issubclass(attr, Role) and attr is not Role:
+                role_names.append(name)
+
+        for role_name in role_names:
             role = getattr(self, role_name)
             try:
                 self._roles[role_name] = role.__init__.config

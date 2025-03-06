@@ -19,7 +19,6 @@
 
 from typing import Callable
 from functools import wraps
-from colmena.client import ContextAwareness
 from colmena.exceptions import (
     WrongClassForDecoratorException,
     WrongFunctionForDecoratorException,
@@ -37,7 +36,6 @@ class Channel:
     def __init__(self, name: str, scope: str = None):
         self.__name = name
         self.__scope = scope
-        self.__channel_if = ChannelInterface(name)
         self.__logger = Logger(self).get_logger()
 
     @property
@@ -78,8 +76,7 @@ class Channel:
         except KeyError:
             channels = {}
 
-        self.__channel_if.scope = scope
-        channels[self.__name] = self.__channel_if
+        channels[self.__name] = scope
         kwargs["channels"] = channels
         return kwargs
 
@@ -100,35 +97,3 @@ class Channel:
                 logic.config["channels"][self.__name] = self.__scope
             except KeyError:
                 logic.config["channels"] = {self.__name: self.__scope}
-
-
-class ChannelInterface:
-    def __init__(self, name):
-        self._name = name
-        self._scope = None
-        self.__logger = Logger(self).get_logger()
-        self.__publish_method = None
-        self.__subscribe_method = None
-
-    @property
-    def scope(self):
-        return self._scope
-
-    @scope.setter
-    def scope(self, scope):
-        self._scope = scope
-
-    def _set_context_awareness(self, context_awareness: ContextAwareness):
-        self.__context_awareness = context_awareness
-
-    def _set_publish_method(self, func: Callable):
-        self.__publish_method = func
-
-    def _set_subscribe_method(self, func: Callable):
-        self.__subscribe_method = func
-
-    def publish(self, message: object):
-        self.__context_awareness.publish(key=self._name, value=message, publisher=self.__publish_method)
-
-    def receive(self):
-        return self.__subscribe_method(key=self._name)
