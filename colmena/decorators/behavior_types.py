@@ -18,6 +18,7 @@
 # -*- coding: utf-8 -*-
 
 import threading
+import time
 from typing import Callable, TYPE_CHECKING
 from functools import wraps
 
@@ -100,8 +101,8 @@ class Persistent:
         should be run persistently.
     """
 
-    def __init__(self, it: int = None):
-        self.__it = it
+    def __init__(self, period: int = None):
+        self.__period = period
         self.__logger = Logger(self).get_logger()
         self.__processes = []
 
@@ -128,12 +129,15 @@ class Persistent:
 
     def _behavior(self, func: Callable, num_executions: "colmena.MetricInterface", role: "colmena.Role"):
         self.__logger.debug("Running persistent")
-        if self.__it is None:
-            while role.running:
-                self.call_persistent(func, num_executions)
-        else:
-            for _ in range(self.__it):
-                self.call_persistent(func, num_executions)
+
+        while role.running:
+            start_time = time.time()
+            self.call_persistent(func, num_executions)
+
+            elapsed_time = time.time() - start_time
+            if (self.__period is not None):
+                print("First sleep")
+                time.sleep(max(0, self.__period - elapsed_time))
 
     @staticmethod
     def call_persistent(func, num_executions):

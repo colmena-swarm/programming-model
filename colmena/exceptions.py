@@ -90,6 +90,18 @@ class WrongServiceClassName(Exception):
         message = f"Service class in {module_name} should be named {service_name}"
         super().__init__(message)
 
+class ReplicatedDecorator(Exception):
+    """Exception raised if the service class is not named in the right way
+    (important in test files).
+    """
+
+    def __init__(self, decorator_name, role_name):
+        message = f"Decorator {decorator_name} is used twice in Role class {role_name}"
+        super().__init__(message)
+
+    def __init__(self, decorator_name):
+        message = f"Decorator {decorator_name} is used twice."
+        super().__init__(message)
 
 class DCPIPMissingException(Exception):
     """Exception raised if the DCP_IP environment variable is not set."""

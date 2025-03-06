@@ -45,7 +45,7 @@ class ExampleInterfaces(Service):
         def __init__(self, *args, **kwargs):
             super().__init__(*args, **kwargs)
 
-        @Persistent(it=10)
+        @Persistent(period=1000)
         def behavior(self):
             self.test_data.publish(5.5)
             self.test_channel.publish("test_message")

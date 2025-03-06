@@ -19,6 +19,7 @@
 
 import time
 import numpy as np
+from datetime import datetime
 from colmena import (
     Context,
     Service,
@@ -28,7 +29,7 @@ from colmena import (
     Metric,
     Persistent,
     Async,
-    KPI,
+    KPI, Dependencies,
 )
 
 
@@ -42,7 +43,17 @@ class CompanyPremises(Context):
         }
 
     def locate(self, device):
-        print(self.structure["floor1"][0])
+        current_seconds = datetime.now().second
+        if current_seconds <= 12:
+            print("floor1/reception")
+        elif current_seconds > 12 and current_seconds <= 24:
+            print("floor2/reception")
+        elif current_seconds > 24 and current_seconds <= 36:
+            print("floor2/open_space")
+        elif current_seconds > 36 and current_seconds <= 48:
+            print("floor3/open_space")
+        else:
+            print("floor3/manager_office")
 
 
 class ExampleApplication(Service):
@@ -59,6 +70,7 @@ class ExampleApplication(Service):
         @Channel(name="buffer")
         @Metric(name="sensed")
         @Requirements("CAMERA")
+        @Dependencies("numpy")
         def __init__(self, *args, **kwargs):
             super().__init__(*args, **kwargs)
             self.dims = [512, 512]
@@ -76,6 +88,7 @@ class ExampleApplication(Service):
         @Metric(name="processed")
         @Requirements("CPU")
         @KPI("buffer_queue_size[100000000s] < 10")
+        @Dependencies("numpy")
         def __init__(self, *args, **kwargs):
             super().__init__(*args, **kwargs)
 

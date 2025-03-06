@@ -1,32 +1,47 @@
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
-[tool.hatch.metadata]
-allow-direct-references = true
-
 
 [project]
-name = "colmena"
-version = "0.1.0"
+name = "colmena_swarm_pm"
+dynamic = ["version"]
 authors = [
-    {name="Workflows and Distributed Computing group"},
+    { name = "Workflows and Distributed Computing group" },
 ]
-
-
 description = "COLMENA Programming model library"
 readme = "README.md"
 requires-python = ">=3.8"
+license = "Apache-2.0"
 classifiers = [
     "Programming Language :: Python :: 3",
     "Operating System :: OS Independent",
     "License :: OSI Approved :: Apache Software License",
 ]
+homepage = "https://proyecto-colmena.com/en"
 dependencies = [
     "coloredlogs",
-    "eclipse-zenoh==0.10.1rc0",
-    "typing",
-    "numpy",
-    "zeromq-pyre@git+https://github.com/zeromq/pyre.git",
-    "pytest"
+    "typing"
 ]
 
+[project.optional-dependencies]
+ci = [
+    "pytest"
+]
+role = [
+    "eclipse-zenoh==0.10.1rc0",
+    "zeromq-pyre @ https://test-files.pythonhosted.org/packages/39/7d/c2288f35af7ff50e05f11e28f9c24b2387864ecb5b2e68bb7e41e8c2f619/zeromq_pyre-0.3.5.tar.gz"
+]
+
+[tool.hatch.metadata]
+allow-direct-references = true
+
+[tool.hatch.version]
+path = "colmena/__init__.py"
+
+[project.scripts]
+colmena_build = "colmena.building_tool.colmena_build:main"
+
+[tool.hatch.build]
+include = [
+    "colmena/*"
+]

@@ -1,32 +1,32 @@
 {
-    "id": {
-        "value": "ExampleApplication"
+  "id": {
+    "value": "ExampleApplication"
+  },
+  "dockerContextDefinitions": [
+    {
+      "id": "company_premises",
+      "imageId": "company_premises:latest"
+    }
+  ],
+  "kpis": [],
+  "dockerRoleDefinitions": [
+    {
+      "id": "Sensing",
+      "imageId": "sensing:0.1",
+      "hardwareRequirements": [
+        "CAMERA"
+      ],
+      "kpis": []
     },
-    "dockerContextDefinitions": [
-        {
-            "id": "company_premises",
-            "imageId": "colmena/testcompany_premises"
-        }
-    ],
-    "kpis": [],
-    "dockerRoleDefinitions": [
-        {
-            "id": "Sensing",
-            "imageId": "colmena/testsensing",
-            "hardwareRequirements": [
-                "CAMERA"
-            ],
-            "kpis": []
-        },
-        {
-            "id": "Processing",
-            "imageId": "colmena/testprocessing",
-            "hardwareRequirements": [
-                "CPU"
-            ],
-            "kpis": [
-                "buffer_queue_size[100000000s] < 10"
-            ]
-        }
-    ]
+    {
+      "id": "Processing",
+      "imageId": "processing:latest",
+      "hardwareRequirements": [
+        "CPU"
+      ],
+      "kpis": [
+        "buffer_queue_size[100000000s] < 10"
+      ]
+    }
+  ]
 }

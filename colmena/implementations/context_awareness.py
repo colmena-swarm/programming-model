@@ -19,7 +19,7 @@
 
 import json
 
-from colmena.client.zenoh_client import ZenohClient
+from colmena.implementations.zenoh_client import ZenohClient
 from colmena.logger import Logger
 
 
@@ -59,7 +59,8 @@ class ContextAwareness:
             self.contexts.append(subscription)
             context_subscriber.subscribe_with_handler(context_name, subscription.handler)
 
-    def publish(self, key: str, value: object, publisher):
+    def context_aware_publish(self, key: str, value: object, publisher):
+        print(f"context aware publish key: {key}, value: {value}")
         if len(self.contexts) > 0:
             for each in self.contexts:
                 if each.scope is not None:
