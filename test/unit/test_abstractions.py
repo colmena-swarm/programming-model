@@ -17,8 +17,7 @@
 
 # -*- coding: utf-8 -*-
 
-from colmena import Role, Service, Channel, Metric
-from colmena.data import Data
+from colmena import Role, Service, Channel, Metric, Data
 
 class ServiceWithThreeDecorators(Service):
     @Data(name='example_data', scope='*')

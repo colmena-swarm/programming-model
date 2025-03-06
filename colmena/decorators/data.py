@@ -19,24 +19,23 @@
 
 from typing import Callable
 from functools import wraps
-from colmena.client import ContextAwareness
 from colmena.exceptions import (
     WrongClassForDecoratorException,
     WrongFunctionForDecoratorException,
-    MetricNotExistException,
+    DataNotExistException,
 )
 from colmena.logger import Logger
 
 
-class Metric:
+class Data:
     """
     Decorator that can be used in __init__ functions of Role and Service.
-    It has an interface to call functions on the metric object.
+    It has an interface to call functions on the data object.
     """
 
-    def __init__(self, name: str):
+    def __init__(self, name: str, scope: str = None):
         self.__name = name
-        self.__metric_if = MetricInterface(name)
+        self.__scope = scope
         self.__logger = Logger(self).get_logger()
 
     @property
@@ -49,58 +48,47 @@ class Metric:
             @wraps(func)
             def logic(self_, *args, **kwargs):
                 parent_class_name = self_.__class__.__bases__[0].__name__
+
                 if parent_class_name == "Role":
                     try:
                         service_config = args[0].__init__.config
-                        if (
-                            "metrics" not in service_config
-                            or self.__name not in service_config["metrics"]
-                        ):
-                            raise MetricNotExistException(self.__name)
-                    except AttributeError:
-                        raise MetricNotExistException(self.__name)
+                        scope = service_config["data"][self.__name]
+                    except (AttributeError, KeyError):
+                        raise DataNotExistException(data_name=self.__name)
 
                     try:
-                        metrics = kwargs["metrics"]
+                        data = kwargs["data"]
                     except KeyError:
-                        metrics = {}
-                    metrics[self.__name] = self.__metric_if
-                    kwargs["metrics"] = metrics
+                        data = {}
+
+                    data[self.name] = scope
+                    kwargs["data"] = data
 
                 elif not parent_class_name == "Service":
                     raise WrongClassForDecoratorException(
-                        class_name=type(self_).__name__, dec_name="Metric"
+                        class_name=type(self_).__name__, dec_name="Data"
                     )
-
                 return func(self_, *args, **kwargs)
 
         else:
             raise WrongFunctionForDecoratorException(
-                func_name=func.__name__, dec_name="Metric"
+                func_name=func.__name__, dec_name="Data"
             )
-
         try:
             logic.config = func.config
         except AttributeError:
             logic.config = {}
 
-        if "metrics" not in logic.config:
-            logic.config["metrics"] = []
-        logic.config["metrics"].append(self.__name)
+        if self.__scope is None:
+            try:
+                logic.config["data"].append(self.__name)
+            except KeyError:
+                logic.config["data"] = [self.__name]
+
+        else:
+            try:
+                logic.config["data"][self.__name] = self.__scope
+            except KeyError:
+                logic.config["data"] = {self.__name: self.__scope}
+
         return logic
-
-
-class MetricInterface:
-    def __init__(self, name):
-        self._name = name
-        self.__publish_method = None
-        self.__logger = Logger(self).get_logger()
-
-    def _set_context_awareness(self, context_awareness: ContextAwareness):
-        self.__context_awareness = context_awareness
-
-    def _set_publish_method(self, func: Callable):
-        self.__publish_method = func
-
-    def publish(self, value: float):
-        self.__context_awareness.publish(key=self._name, value=value, publisher=self.__publish_method)

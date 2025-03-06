@@ -19,9 +19,7 @@
 
 from unittest.mock import Mock
 
-from colmena import Role, Service
-from colmena.data import Data
-from colmena.exceptions import DataNotExistException
+from colmena import Role, Service, Data, DataNotExistException
 
 
 class ServiceWithDataDec(Service):
@@ -76,6 +74,7 @@ class TestData:
         zenoh_client = Mock()
         pyre_client = Mock()
         context_awareness = Mock()
+        context_awareness.context_aware_publish = Mock()
 
         role.comms._Communications__context_awareness = context_awareness
         role.comms._Communications__pyre_client = pyre_client
@@ -85,9 +84,10 @@ class TestData:
 
         data_interface = role.example_data
         data_interface.publish(0)
-        kwargs = context_awareness.publish.call_args.kwargs
-        assert kwargs['key'] == 'example_data'
-        assert kwargs['value'] == 0
+        context_awareness.context_aware_publish.assert_called_once()
+        args = context_awareness.context_aware_publish.call_args.args
+        assert args[0] == 'example_data'
+        assert args[1]== 0
 
         data_interface.get()
         kwargs = zenoh_client.get.call_args.kwargs

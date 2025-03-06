@@ -17,18 +17,14 @@
 
 # -*- coding: utf-8 -*-
 
-from colmena.behavior_types import Async, Persistent
-from colmena.channel import Channel, ChannelInterface
-from colmena.data import Data, DataInterface
-from colmena.metric import Metric, MetricInterface
+__version__ = "0.1.1"
+
+from colmena.decorators import Channel, Data, Dependencies, KPI, Metric, Requirements, Version, Async, Persistent
+from colmena.abstractions import ChannelInterface, DataInterface, MetricInterface
 from colmena.context import Context
-from colmena.kpi import KPI
-from colmena.requirements import Requirements
 from colmena.role import Role
 from colmena.service import Service
-from colmena.communications import Communications
 from colmena.logger import Logger
-from colmena.client import ZenohClient, PyreClient
 from colmena.exceptions import (
     ChannelNotExistException,
     DataNotExistException,

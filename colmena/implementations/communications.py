@@ -20,7 +20,9 @@
 from typing import TYPE_CHECKING
 
 from colmena.logger import Logger
-from colmena.client import ZenohClient, PyreClient, ContextAwareness
+from colmena.implementations.zenoh_client import ZenohClient
+from colmena.implementations.pyre_client import PyreClient
+from colmena.implementations import ContextAwareness
 
 if TYPE_CHECKING:
     import colmena
@@ -54,8 +56,7 @@ class Communications:
         try:
             for c in role.channels:
                 channel = getattr(role, c)
-                channel._set_context_awareness(self.__context_awareness)
-                channel._set_publish_method(self.__pyre_client.publish)
+                channel._set_publish_method(lambda key, value: self.__context_awareness.context_aware_publish(key, value, self.__pyre_client.publish))
                 channel._set_subscribe_method(self.__pyre_client.subscribe)
 
         except AttributeError:
@@ -66,16 +67,15 @@ class Communications:
         try:
             for m in role.metrics:
                 metric = getattr(role, m)
-                metric._set_context_awareness(self.__context_awareness)
-                metric._set_publish_method(self.__zenoh_client.publish)
+                metric._set_publish_method(lambda key, value: self.__context_awareness.context_aware_publish(key, value, self.__zenoh_client.publish))
+
         except AttributeError:
             self.__logger.debug(f"No metric interfaces in role '{type(role).__name__}'")
 
         try:
             for d in role.data:
                 data = getattr(role, d)
-                data._set_context_awareness(self.__context_awareness)
-                data._set_publish_method(self.__zenoh_client.put)
+                data._set_publish_method(lambda key, value: self.__context_awareness.context_aware_publish(key, value, self.__zenoh_client.put))
                 data._set_get_method(self.__zenoh_client.get)
 
         except AttributeError:

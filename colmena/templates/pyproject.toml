@@ -1,15 +1,14 @@
 [build-system]
-requires = ["hatchling"]
+requires = ["hatchling", "hatch-requirements-txt"]
 build-backend = "hatchling.build"
 
 [project]
-name = "colmena_swarm_pm"
-dynamic = ["version"]
+name = "Processing"
+dynamic = ["version", "dependencies"]
 authors = [
     { name = "Workflows and Distributed Computing group" },
 ]
-description = "COLMENA Programming model library"
-readme = "README.md"
+description = "COLMENA: NAME"
 requires-python = ">=3.8"
 license = "Apache-2.0"
 classifiers = [
@@ -18,30 +17,23 @@ classifiers = [
     "License :: OSI Approved :: Apache Software License",
 ]
 homepage = "https://proyecto-colmena.com/en"
-dependencies = [
-    "coloredlogs",
-    "typing"
-]
 
-[project.optional-dependencies]
-ci = [
-    "pytest"
-]
-role = [
-    "eclipse-zenoh==0.10.1rc0",
-    "colmena-zeromq-pyre==0.3.5"
-]
+[project.scripts]
+start = "NAME.main:main"
+
+[tool.hatch.metadata.hooks.requirements_txt]
+files = ["requirements.txt"]
+
+[tool.pip]
+extra-index-url = "https://test.pypi.org/simple/"
 
 [tool.hatch.metadata]
 allow-direct-references = true
 
 [tool.hatch.version]
-path = "colmena/__init__.py"
-
-[project.scripts]
-colmena_build = "colmena.building_tool.colmena_build:main"
+path = "NAME/main.py"
 
 [tool.hatch.build]
 include = [
-    "colmena/*"
+    "NAME/*"
 ]

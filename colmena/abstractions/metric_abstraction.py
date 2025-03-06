@@ -17,6 +17,18 @@
 
 # -*- coding: utf-8 -*-
 
-from colmena.client.pyre_client import PyreClient
-from colmena.client.zenoh_client import ZenohClient
-from colmena.client.context_awareness import ContextAwareness
+from typing import Callable
+from colmena.logger import Logger
+
+
+class MetricInterface:
+    def __init__(self, name):
+        self._name = name
+        self.__publish_method = None
+        self.__logger = Logger(self).get_logger()
+
+    def _set_publish_method(self, func: Callable):
+        self.__publish_method = func
+
+    def publish(self, value: float):
+        self.__publish_method(key=self._name, value=value)
