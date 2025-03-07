@@ -29,7 +29,7 @@ ci = [
 ]
 role = [
     "eclipse-zenoh==0.10.1rc0",
-    "zeromq-pyre @ https://test-files.pythonhosted.org/packages/39/7d/c2288f35af7ff50e05f11e28f9c24b2387864ecb5b2e68bb7e41e8c2f619/zeromq_pyre-0.3.5.tar.gz"
+    "colmena-zeromq-pyre==0.3.5"
 ]
 
 [tool.hatch.metadata]
