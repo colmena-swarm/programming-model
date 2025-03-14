@@ -72,7 +72,7 @@ class ZenohClient:
 
     def put(self, key: str, value: bytes):
         self.__session.put(f"{self._root}/{key}", value)
-        self._logger.debug(f"New data value stored: '{key}'")
+        self._logger.debug(f"New data value stored: '{self._root}/{key}'")
         self.__session.close()
 
     def get(self, key: str) -> object:
@@ -83,5 +83,5 @@ class ZenohClient:
                 self.__session.close()
                 return reply
             except IndexError:
-                self._logger.debug(f"could not get from zenoh. key: {key}")
+                self._logger.debug(f"could not get from zenoh. key: {self._root}/{key}")
                 time.sleep(1)

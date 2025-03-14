@@ -52,7 +52,10 @@ class Data:
                 if parent_class_name == "Role":
                     try:
                         service_config = args[0].__init__.config
-                        scope = service_config["data"][self.__name]
+                        try:
+                            scope = service_config["data"][self.__name]
+                        except TypeError:
+                            scope = None
                     except (AttributeError, KeyError):
                         raise DataNotExistException(data_name=self.__name)
 

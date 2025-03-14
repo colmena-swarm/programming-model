@@ -75,8 +75,8 @@ class Communications:
         try:
             for d in role.data:
                 data = getattr(role, d)
-                data._set_publish_method(lambda key, value: self.__context_awareness.context_aware_publish(key, value, self.__zenoh_client.put))
-                data._set_get_method(self.__zenoh_client.get)
+                data._set_publish_method(lambda key, value, scope: self.__context_awareness.context_aware_data_set(key, value, self.__zenoh_client.publish, scope))
+                data._set_get_method(lambda key, scope: self.__context_awareness.context_aware_data_get(key, self.__zenoh_client.get, scope))
 
         except AttributeError:
             self.__logger.debug(f"No data interfaces in role '{type(role).__name__}'")

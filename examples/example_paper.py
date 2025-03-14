@@ -14,8 +14,7 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 #
-import json
-import os
+
 # -*- coding: utf-8 -*-
 
 import time
@@ -28,55 +27,52 @@ from colmena import (
     Metric,
     Persistent,
     Async,
-    KPI, Data, Context,
+    KPI, Data,
 )
 
-class Device(Context):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-
-    def locate(self, device):
-        location = {"id": os.getenv("COMPOSE_PROJECT_NAME", "default_device_id")}
-        print(json.dumps(location))
 
 class ExampleSensorprocessor(Service):
-    @Context(class_ref=Device, name="device")
-    @Data(name="images", scope="device/id = .")
+    @Channel(name="images")
+    @Channel(name="processed")
     @Metric(name="processing_time")
+    @Data(name="num_images")
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
     class Sensing(Role):
-        @Context(class_ref=Device, name="device")
-        @Data(name="images", scope="device/id = .")
-        @Requirements("SENSOR")
+        @Data(name="num_images")
+        @Channel(name="images")
+        @Requirements("CAMERA")
         def __init__(self, *args, **kwargs):
             super().__init__(*args, **kwargs)
+            self.dims = [512, 512]
+            self.num = 0
 
         @Persistent()
         def behavior(self):
-            payload = "test_string"
             image = {
-                "payload": payload,
+                "payload": np.random.randn(*self.dims),
                 "timestamp": time.time(),
             }
             self.images.publish(image)
-            print(f"stored {payload} in shared data")
+            self.num_images.publish(self.num)
+            self.num += 1
             time.sleep(1)
 
     class Processing(Role):
-        @Context(class_ref=Device, name="device")
-        @Data(name="images", scope="device/id = .")
+        @Data(name="num_images")
+        @Channel(name="processed")
+        @Channel(name="images")
         @Metric(name="processing_time")
         @Requirements("CPU")
         @KPI("examplesensorprocessor/processing_time[5s] < 1")
         def __init__(self, *args, **kwargs):
             super().__init__(*args, **kwargs)
 
-        @Persistent()
-        def behavior(self):
-            image = json.loads(self.images.get().decode('utf-8'))
-            shared_data_payload = image["payload"]
-            print(f"Load from shared data {shared_data_payload}")
+        @Async(image="images")
+        def behavior(self, image):
+            res = np.sum(image["payload"])
             time.sleep(0.75) #simulate work
+            self.processed.publish(res)
+            print(self.num_images.get().decode('utf-8'))
             self.processing_time.publish(time.time() - image["timestamp"])
