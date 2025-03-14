@@ -14,7 +14,7 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 #
-
+import json
 # -*- coding: utf-8 -*-
 
 import time
@@ -23,38 +23,46 @@ from colmena import (
     Service,
     Role,
     Requirements,
-    Metric,
     Persistent,
-    KPI,
+    Context, Data
 )
 
-
-class ExamplePlantcare(Service):
-    @Metric(name="moisture")
+class CompanyPremises(Context):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-    class Plantsensor(Role):
-        @Metric(name="moisture")
+    def locate(self, device):
+        location = {"building": "BSC"}
+        print(json.dumps(location))
+
+class ExampleContextdata(Service):
+    @Context(class_ref=CompanyPremises, name="company_premises")
+    @Data(name="shared_data", scope="company_premises/building = .")
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+    class Setter(Role):
         @Requirements("SENSOR")
-        def __init__(self, *args, **kwargs):
-            super().__init__(*args, **kwargs)
-
-        def read_temp(self):
-            return random.randint(15, 30)
-
-        @Persistent()
-        def behavior(self):
-            self.moisture.publish(self.read_temp())
-            time.sleep(1)
-
-    class Plantwatering(Role):
-        @Requirements("WATERING")
-        @KPI("exampleplantcare/moisture[5s] > 20")
+        @Context(class_ref=CompanyPremises, name="company_premises")
+        @Data(name="shared_data", scope="company_premises/building = .")
         def __init__(self, *args, **kwargs):
             super().__init__(*args, **kwargs)
 
         @Persistent()
         def behavior(self):
-            print("watering ${PLANT_NAME_WATERING_COMPONENT}...")
+            shared_data = {"some_data": "some_value"}
+            self.shared_data.publish(shared_data)
+            time.sleep(20)
+
+    class Getter(Role):
+        @Requirements("GETTER")
+        @Context(class_ref=CompanyPremises, name="company_premises")
+        @Data(name="shared_data", scope="company_premises/building = .")
+        def __init__(self, *args, **kwargs):
+            super().__init__(*args, **kwargs)
+
+        @Persistent()
+        def behavior(self):
+            print(self.shared_data.get())
             time.sleep(1)

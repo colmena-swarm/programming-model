@@ -44,8 +44,8 @@ class DataInterface:
         self.__get_method = func
 
     def publish(self, value: object):
-        self.__publish_method(key=self._name, value=value)
+        self.__publish_method(key=self._name, value=value, scope=self._scope)
 
     def get(self) -> bytes:
-        value = self.__get_method(key=self._name)
+        value = self.__get_method(key=self._name, scope=self._scope)
         return value

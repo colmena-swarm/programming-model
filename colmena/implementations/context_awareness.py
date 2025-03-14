@@ -18,10 +18,13 @@
 # -*- coding: utf-8 -*-
 
 import json
+import re
 
 from colmena.implementations.zenoh_client import ZenohClient
 from colmena.logger import Logger
 
+pattern = r"^([\w-]+)/([\w-]+)\s*=\s*(.+)$"
+old_sla = True
 
 def decode_zenoh_value(message):
     decoded = message.decode('utf-8')
@@ -32,6 +35,7 @@ def get_context_names(role):
         return role._context
     except AttributeError:
         return []
+
 
 class Context:
     def __init__(self, context_name, initial_value):
@@ -51,19 +55,71 @@ class Context:
 class ContextAwareness:
     def __init__(self, context_subscriber: ZenohClient, context_names):
         self.__logger = Logger(self).get_logger()
-        self.contexts = []
+        self.contexts = {}
         # create context update subscription for each context hierarchy in the role
         for context_name in context_names:
             initial_value = context_subscriber.get(context_name)
             subscription = Context(context_name, initial_value)
-            self.contexts.append(subscription)
+            self.contexts[context_name] = subscription
             context_subscriber.subscribe_with_handler(context_name, subscription.handler)
 
     def context_aware_publish(self, key: str, value: object, publisher):
-        print(f"context aware publish key: {key}, value: {value}")
-        if len(self.contexts) > 0:
-            for each in self.contexts:
-                if each.scope is not None:
-                    publisher(key + "/" + each.scope, value)
-        else:
+        if old_sla:
             publisher(key, value)
+            return
+
+        metric_payload = {}
+        for _, each in self.contexts.items():
+            for scope_key, scope_value in json.loads(each.scope).items():
+                metric_payload[each.context_name + "/" + scope_key] = scope_value
+        metric_payload["value"] = value
+        publisher(key, json.dumps(metric_payload))
+
+    def context_aware_data_get(self, key: str, getter, scope: str = None):
+        if scope is None:
+            return getter(key)
+
+
+        match = re.match(pattern, scope)
+        if match:
+            context_name = match.group(1)
+            scope_key = match.group(2)
+            scope_value = match.group(3)
+
+            if "." in scope_value:
+                try:
+                    context = self.contexts[context_name]
+                    scope_value = json.loads(context.scope)[scope_key]
+                    return getter(f"{context_name}/{scope_key}/{scope_value}/{key}")
+                except KeyError:
+                    self.__logger.info(f"context_name {context_name} not set")
+                    return {}
+            else:
+                return getter(f"{context_name}/{scope_key}/{scope_value}/{key}")
+        else:
+            raise ValueError(f"scope {scope} has invalid format")
+
+    def context_aware_data_set(self, key: str, value: object, setter, scope: str = None):
+        if scope is None:
+            setter(key, value)
+            return
+
+        match = re.match(pattern, scope)
+        if match:
+            context_name = match.group(1)
+            scope_key = match.group(2)
+            scope_value = match.group(3)
+
+            if "." in scope_value:
+                try:
+                    context = self.contexts[context_name]
+                    scope_value = json.loads(context.scope)[scope_key]
+                    self.__logger.info(f"data key {context_name}/{scope_key}/{scope_value}/{key}, value {value}")
+                    setter(f"{context_name}/{scope_key}/{scope_value}/{key}", value)
+                except KeyError:
+                    self.__logger.info(f"context_name {context_name} not set")
+                    return
+            else:
+                setter(f"{context_name}/{scope_key}/{scope_value}/{key}", value)
+        else:
+            raise ValueError(f"scope {scope} has invalid format")

@@ -14,7 +14,7 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 #
-
+import json
 # -*- coding: utf-8 -*-
 
 import time
@@ -22,22 +22,8 @@ import time
 import zenoh
 
 key = "dockerContextDefinitions/company_premises"
-value = "test_scope"
-
-def increasing_values():
-    session = zenoh.open()
-    pub = session.declare_publisher(key)
-    i = 0
-    while True:
-        buf = f"{i}"
-        print(f"Putting Data ('{key}': '{buf}')...")
-        pub.put(buf)
-        i += 1
-        time.sleep(1)
-
-def single_value():
-    session = zenoh.open()
-    session.put(key, value)
+value = {"building": "BSC"}
 
 if __name__ == "__main__":
-    increasing_values()
+    session = zenoh.open()
+    session.put(key, json.dumps(value))
