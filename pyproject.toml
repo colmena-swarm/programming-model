@@ -30,7 +30,7 @@ ci = [
 role = [
     "eclipse-zenoh==0.10.1rc0",
     "colmena-zeromq-pyre==0.3.5",
-    "numpy==2.2.1"
+    "numpy==2.0.2"
 ]
 
 [tool.hatch.metadata]
