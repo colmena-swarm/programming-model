@@ -1,6 +1,6 @@
-#!/usr/bin/python
+#!/usr/bin/env python3
 #
-#  Copyright 2002-2024 Barcelona Supercomputing Center (www.bsc.es)
+#  Copyright 2002-2025 Barcelona Supercomputing Center (www.bsc.es)
 #
 #  Licensed under the Apache License, Version 2.0 (the "License");
 #  you may not use this file except in compliance with the License.
@@ -28,10 +28,11 @@ class KPI:
     Decorator that specifies a KPI of a role or service.
     """
 
-    __slots__ = ["__expression", "__logger"]
+    __slots__ = ["__query", "__scope", "__logger"]
 
-    def __init__(self, expression: str):
-        self.__expression = expression
+    def __init__(self, query: str, scope: str = None):
+        self.__query = query
+        self.__scope = scope
         self.__logger = Logger(self).get_logger()
 
     def __call__(self, func: Callable) -> Callable:
@@ -42,9 +43,10 @@ class KPI:
                 raise WrongClassForDecoratorException(
                     class_name=type(self_).__name__, dec_name="kpi"
                 )
+
             if not hasattr(self_, "_kpis"):
                 self_._kpis = []
-            self_._kpis.append(self.__expression)
+            self_._kpis.append(self.__query)
             return func(self_, *args, **kwargs)
 
         try:
@@ -54,5 +56,8 @@ class KPI:
 
         if "kpis" not in logic.config:
             logic.config["kpis"] = []
-        logic.config["kpis"].append(self.__expression)
+
+        logic.config["kpis"].append(
+            {"query": self.__query, **({"scope": self.__scope} if self.__scope is not None else {})}
+        )
         return logic

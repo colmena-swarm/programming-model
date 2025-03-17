@@ -16,14 +16,14 @@
 
 FROM python:3.9.18-slim-bookworm
 
-    ARG BUILD_DATE 2024-07-31
+    ARG BUILD_DATE=2025-08-18
 
     LABEL org.label-schema.name="Colmena's Programming Model" \
-        org.label-schema.description="Tool for creating services to be deployed on a COLMENA platform" \
-        org.label-schema.build-date="${BUILD_DATE}" \
-        org.label-schema.url="http://proyecto-colmena.com" \
-        org.label-schema.vcs-url="https://github.com/colmena-swarm/programming-model" \
-        maintainer="Barcelona Supercomputing Center"
+          org.label-schema.description="Tool for creating services to be deployed on a COLMENA platform" \
+          org.label-schema.build-date="${BUILD_DATE}" \
+          org.label-schema.url="http://proyecto-colmena.com" \
+          org.label-schema.vcs-url="https://github.com/colmena-swarm/programming-model" \
+          maintainer="Barcelona Supercomputing Center"
 
     COPY . /colmena
     WORKDIR /colmena
@@ -32,9 +32,10 @@ FROM python:3.9.18-slim-bookworm
         apt-get install -y --no-install-recommends \
             git=1:2.39.5-0+deb12u2 && \
         python3 -m pip install --no-cache-dir . && \
-        apt-get remove -y git && \        
+        apt-get remove -y git && \
         rm -rf /var/lib/apt/lists/*
-    
+
+    RUN python3 -m pip install --no-cache-dir .[role]
 
     WORKDIR /colmena/scripts
-    ENTRYPOINT ["python3", "-m", "colmena_build", "--colmena_path=/colmena", "--service_code_path=/app"]
+    ENTRYPOINT ["colmena_build", "--build_file=/colmena/dist/colmena_swarm_pm-0.1.4.tar.gz"]

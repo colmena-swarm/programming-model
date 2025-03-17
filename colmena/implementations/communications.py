@@ -1,6 +1,6 @@
-#!/usr/bin/python
+#!/usr/bin/env python3
 #
-#  Copyright 2002-2024 Barcelona Supercomputing Center (www.bsc.es)
+#  Copyright 2002-2025 Barcelona Supercomputing Center (www.bsc.es)
 #
 #  Licensed under the Apache License, Version 2.0 (the "License");
 #  you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@
 
 # -*- coding: utf-8 -*-
 
+import os
 from typing import TYPE_CHECKING
 
 from colmena.logger import Logger
@@ -33,6 +34,9 @@ def get_context_names(role):
     except AttributeError:
         return []
 
+def agent_id():
+    return os.getenv("AGENT_ID")
+
 class Communications:
     """Class to handle communications using clients."""
 
@@ -42,8 +46,10 @@ class Communications:
     def start(self, role: "colmena.Role", zenoh_root: str):
         self.__pyre_client = PyreClient()
         self.__pyre_client.start()
-        self.__zenoh_client = ZenohClient(zenoh_root)
-        self.__context_awareness = ContextAwareness(ZenohClient("dockerContextDefinitions"), get_context_names(role))
+        self.__zenoh_data_client = ZenohClient(zenoh_root)
+        self.__zenoh_metrics_client = ZenohClient(f"colmena/metrics/{agent_id()}/{zenoh_root}")
+        self.__zenoh_context_client = ZenohClient(f"colmena/contexts/{agent_id()}")
+        self.__context_awareness = ContextAwareness(self.__zenoh_context_client, get_context_names(role))
         self.__initialize(role)
 
     def __initialize(self, role: "colmena.Role"):
@@ -54,9 +60,9 @@ class Communications:
         """
 
         try:
-            for c in role.channels:
+            for c in role.channel_info:
                 channel = getattr(role, c)
-                channel._set_publish_method(lambda key, value: self.__context_awareness.context_aware_publish(key, value, self.__pyre_client.publish))
+                channel._set_publish_method(self.__pyre_client.publish)
                 channel._set_subscribe_method(self.__pyre_client.subscribe)
 
         except AttributeError:
@@ -65,18 +71,18 @@ class Communications:
             )
 
         try:
-            for m in role.metrics:
+            for m in role.metric_info:
                 metric = getattr(role, m)
-                metric._set_publish_method(lambda key, value: self.__context_awareness.context_aware_publish(key, value, self.__zenoh_client.publish))
+                metric._set_publish_method(lambda key, value: self.__context_awareness.context_aware_publish(key, value, self.__zenoh_metrics_client.publish))
 
         except AttributeError:
             self.__logger.debug(f"No metric interfaces in role '{type(role).__name__}'")
 
         try:
-            for d in role.data:
+            for d in role.data_info:
                 data = getattr(role, d)
-                data._set_publish_method(lambda key, value: self.__context_awareness.context_aware_publish(key, value, self.__zenoh_client.put))
-                data._set_get_method(self.__zenoh_client.get)
+                data._set_publish_method(lambda key, value, scope: self.__context_awareness.context_aware_data_set(key, value, self.__zenoh_data_client.publish, scope))
+                data._set_get_method(lambda key, scope: self.__context_awareness.context_aware_data_get(key, self.__zenoh_data_client.get, scope))
 
         except AttributeError:
             self.__logger.debug(f"No data interfaces in role '{type(role).__name__}'")

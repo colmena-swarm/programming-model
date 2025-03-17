@@ -1,6 +1,6 @@
-#!/usr/bin/python
+#!/usr/bin/env python3
 #
-#  Copyright 2002-2024 Barcelona Supercomputing Center (www.bsc.es)
+#  Copyright 2002-2025 Barcelona Supercomputing Center (www.bsc.es)
 #
 #  Licensed under the Apache License, Version 2.0 (the "License");
 #  you may not use this file except in compliance with the License.
@@ -17,16 +17,12 @@
 
 # -*- coding: utf-8 -*-
 
-import threading
 import time
-from typing import Callable, TYPE_CHECKING
+from typing import Callable
 from functools import wraps
 
 from colmena.exceptions import WrongFunctionForDecoratorException
 from colmena.logger import Logger
-
-if TYPE_CHECKING:
-    import colmena
 
 
 class Async:
@@ -47,52 +43,21 @@ class Async:
 
             @wraps(func)
             def logic(self_, *args, **kwargs):
-                for name, channel in self.__channels.items():
-                    process = threading.Thread(
-                        target=self._behavior,
-                        args=(
-                            lambda r: func(self_, *args, **kwargs, **r),
-                            name,
-                            getattr(self_, channel),
-                            self_._num_executions,
-                            self_
-                        ),
-                    )
-                    process.start()
-                    try:
-                        self_._processes.append(process)
-                    except AttributeError:
-                        self_._processes = []
-                        self_._processes.append(process)
+                # Loop through all declared channels
+                for name, channel_name in self.__channels.items():
+                    channel = getattr(self_, channel_name)
 
+                    # Receive loop for each channel (sequential, all in main thread)
+                    self.__logger.info(channel)
+                    while self_.running:
+                        for message in channel.subscriber().receive():
+                            func(self_, *args, **kwargs, **{name: message.value})
+                            channel.subscriber().ack(message)
             return logic
+
         raise WrongFunctionForDecoratorException(
             func_name=func.__name__, dec_name="Async"
         )
-
-    def _behavior(
-            self,
-            func: Callable,
-            name: str,
-            channel: "colmena.ChannelInterface",
-            num_executions: "colmena.MetricInterface",
-            role: "colmena.Role",
-    ):
-        self.__logger.debug("Running async")
-        self.call_async(channel.receive(), func, name, num_executions, role)
-
-    def call_async(self,
-            sub,
-            func: Callable,
-            name: str,
-            num_executions: "colmena.MetricInterface",
-            role
-    ):
-        while role.running:
-            for message in sub.receive():
-                func({name: message.value})
-                num_executions.publish(1)
-                sub.ack(message)
 
 
 class Persistent:
@@ -101,45 +66,28 @@ class Persistent:
         should be run persistently.
     """
 
+    __slots__ = ["__period", "__logger"]
+
     def __init__(self, period: int = None):
         self.__period = period
         self.__logger = Logger(self).get_logger()
-        self.__processes = []
 
     def __call__(self, func: Callable) -> Callable:
         if func.__name__ == "behavior":
 
             @wraps(func)
             def logic(self_, *args, **kwargs):
-                process = threading.Thread(
-                    target=self._behavior,
-                    args=(lambda: func(self_, *args, **kwargs), self_._num_executions, self_),
-                )
-                process.start()
-                try:
-                    self_._processes.append(process)
-                except AttributeError:
-                    self_._processes = []
-                    self_._processes.append(process)
+                # Persistent execution loop (runs in main thread)
+                while self_.running:
+                    start_time = time.time()
+
+                    func(self_, *args, **kwargs)
+
+                    if self.__period is not None:
+                        time.sleep(max(0, self.__period - (time.time() - start_time)))
 
             return logic
+
         raise WrongFunctionForDecoratorException(
             func_name=func.__name__, dec_name="Persistent"
         )
-
-    def _behavior(self, func: Callable, num_executions: "colmena.MetricInterface", role: "colmena.Role"):
-        self.__logger.debug("Running persistent")
-
-        while role.running:
-            start_time = time.time()
-            self.call_persistent(func, num_executions)
-
-            elapsed_time = time.time() - start_time
-            if (self.__period is not None):
-                print("First sleep")
-                time.sleep(max(0, self.__period - elapsed_time))
-
-    @staticmethod
-    def call_persistent(func, num_executions):
-        func()
-        num_executions.publish(1)

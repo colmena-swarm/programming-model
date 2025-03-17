@@ -1,6 +1,6 @@
-#!/usr/bin/python
+#!/usr/bin/env python3
 #
-#  Copyright 2002-2023 Barcelona Supercomputing Center (www.bsc.es)
+#  Copyright 2002-2025 Barcelona Supercomputing Center (www.bsc.es)
 #
 #  Licensed under the Apache License, Version 2.0 (the "License");
 #  you may not use this file except in compliance with the License.
@@ -152,23 +152,27 @@ class PyreClient(threading.Thread):
             self._logger.debug("could not stop pyre gracefully")
 
     def publish(self, key: str, value: object):
+        self._logger.info(f"Publishing: key {key}, value {value}")
         self.publisher_socket.send(pickle.dumps(ColmenaMessage(key, value)))
 
     def ack(self, message: ColmenaMessage):
         self.ack_socket.send(pickle.dumps(Ack(message.send_time, message.sender, message.key)))
 
     def subscribe(self, key: str):
-        print(f"subscribing to {key}")
-        subscriber = PyreSubscriber(self.ack)
-        self._subscribers[key] = subscriber
-        self.pyre.join(key)
+        try:
+            subscriber = self._subscribers[key]
+        except KeyError:
+            self._logger.info(f"subscribing to {key}")
+            subscriber = PyreSubscriber(self.ack)
+            self._subscribers[key] = subscriber
+            self.pyre.join(key)
         return subscriber
 
 
 class PyreSubscriber:
-    def __init__(self, ack):
+    def __init__(self, ack_callback):
         self.queue = Queue()
-        self.ack = ack
+        self._ack_callback = ack_callback
 
     def receive(self) -> list[ColmenaMessage]:
         elements = list()
@@ -180,4 +184,4 @@ class PyreSubscriber:
         self.queue.put(msg)
 
     def ack(self, msg: ColmenaMessage):
-        self.ack(msg)
+        self._ack_callback(msg)

@@ -3,7 +3,7 @@ requires = ["hatchling", "hatch-requirements-txt"]
 build-backend = "hatchling.build"
 
 [project]
-name = "Processing"
+name = "NAME"
 dynamic = ["version", "dependencies"]
 authors = [
     { name = "Workflows and Distributed Computing group" },

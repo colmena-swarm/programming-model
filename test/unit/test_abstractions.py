@@ -37,31 +37,31 @@ class ServiceWithThreeDecorators(Service):
 class TestAbstractions:
 
     def test_decorator_config_service(self):
-        data = ServiceWithThreeDecorators.__init__.config['data']
+        data = ServiceWithThreeDecorators.__init__.config['data_info']
         assert data == {'example_data': '*'}
 
-        channel = ServiceWithThreeDecorators.__init__.config['channels']
+        channel = ServiceWithThreeDecorators.__init__.config['channel_info']
         assert channel == {'example_channel': '*'}
 
-        metrics = ServiceWithThreeDecorators.__init__.config['metrics']
+        metrics = ServiceWithThreeDecorators.__init__.config['metric_info']
         assert metrics == ['example_metric']
 
 
     def test_decorator_data_in_role(self):
         role = ServiceWithThreeDecorators.RoleWithThreeDecorators(ServiceWithThreeDecorators)
-        assert role.data[0] == 'example_data'
+        assert role.data_info[0] == 'example_data'
         data_interface = role.example_data
 
         assert data_interface._name == 'example_data'
         assert data_interface._scope == '*'
 
-        assert role.channels[0] == 'example_channel'
+        assert role.channel_info[0] == 'example_channel'
         channel_interface = role.example_channel
 
         assert channel_interface._name == 'example_channel'
         assert channel_interface._scope == '*'
 
-        assert role.metrics[0] == 'example_metric'
+        assert role.metric_info[0] == 'example_metric'
         metric_interface = role.example_metric
 
         assert metric_interface._name == 'example_metric'

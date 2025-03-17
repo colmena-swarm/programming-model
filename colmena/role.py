@@ -1,6 +1,6 @@
-#!/usr/bin/python
+#!/usr/bin/env python3
 #
-#  Copyright 2002-2024 Barcelona Supercomputing Center (www.bsc.es)
+#  Copyright 2002-2025 Barcelona Supercomputing Center (www.bsc.es)
 #
 #  Licensed under the Apache License, Version 2.0 (the "License");
 #  you may not use this file except in compliance with the License.
@@ -18,6 +18,10 @@
 # -*- coding: utf-8 -*-
 
 import os
+import signal
+import sys
+import time
+
 from colmena import MetricInterface, ChannelInterface, DataInterface
 from colmena.exceptions import FunctionNotImplementedException
 from colmena.logger import Logger
@@ -33,9 +37,9 @@ class Role:
         self._name = type(self).__name__
         self._service_name = args[0].__name__.lower()
         try:
-            self.channels = []
-            for channel_name, channel_scope in kwargs["channels"].items():
-                self.channels.append(channel_name)
+            self.channel_info = []
+            for channel_name, channel_scope in kwargs["channel_info"].items():
+                self.channel_info.append(channel_name)
                 channel_interface = ChannelInterface(channel_name)
                 channel_interface.scope = channel_scope
                 setattr(self, channel_name, channel_interface)
@@ -43,9 +47,9 @@ class Role:
             self.logger.debug(f"No channels in role {type(self).__name__}")
 
         try:
-            self.data = []
-            for data_name, data_scope in kwargs["data"].items():
-                self.data.append(data_name)
+            self.data_info = []
+            for data_name, data_scope in kwargs["data_info"].items():
+                self.data_info.append(data_name)
                 data_interface = DataInterface(data_name)
                 data_interface.scope = data_scope
                 setattr(self, data_name, data_interface)
@@ -53,9 +57,9 @@ class Role:
             self.logger.debug(f"No data in role {type(self).__name__}")
 
         try:
-            self.metrics = []
-            for metric_name in kwargs["metrics"]:
-                self.metrics.append(metric_name)
+            self.metric_info = []
+            for metric_name in kwargs["metric_info"]:
+                self.metric_info.append(metric_name)
                 metric_interface = MetricInterface(metric_name)
                 setattr(self, metric_name, metric_interface)
         except KeyError:
@@ -63,8 +67,9 @@ class Role:
 
         self.logger.info(f"Role '{type(self).__name__}' initialized")
 
+        # Leave num_executions if the developer wants to use it
         _id = "num_executions"
-        self.metrics.append(f"_{_id}")
+        self.metric_info.append(f"_{_id}")
         setattr(
             self,
             f"_{_id}",
@@ -102,14 +107,22 @@ class Role:
         """
         pass
 
-    def execute(self):
+    def execute(self, test: str = False):
         """
         Function to execute a role by running its behavior function.
         """
+        self.logger.info("Trying to execute...")
+        self._running = True
+        # Register signal handlers in main thread
+        if not test:
+            signal.signal(signal.SIGTERM, self.handle_termination)
+            signal.signal(signal.SIGINT, self.handle_termination)
+            self.logger.info("Signal handlers registered.")
+
         self.start()
         self.comms.start(self, self._service_name)
         self.logger.info(f"Executing role '{self._name}'")
-        self._running = True
+
         self.behavior()
 
     def terminate(self):
@@ -130,3 +143,10 @@ class Role:
             self.logger.debug("Environment variable HOSTNAME not found")
             _hostname = "localhost"
         return _hostname
+
+    # Define a handler for SIGTERM (and optionally SIGINT)
+    def handle_termination(self, signum, frame):
+        self.logger.info(f"Received signal {signum}, shutting down gracefully...")
+        self.terminate()
+        self.logger.info("Cleanup complete. Exiting.")
+        sys.exit(0)

@@ -1,6 +1,6 @@
-#!/usr/bin/python
+#!/usr/bin/env python3
 #
-#  Copyright 2002-2024 Barcelona Supercomputing Center (www.bsc.es)
+#  Copyright 2002-2025 Barcelona Supercomputing Center (www.bsc.es)
 #
 #  Licensed under the Apache License, Version 2.0 (the "License");
 #  you may not use this file except in compliance with the License.
@@ -17,72 +17,13 @@
 
 # -*- coding: utf-8 -*-
 
-from typing import Callable
-from functools import wraps
-from colmena.exceptions import (
-    WrongClassForDecoratorException,
-    WrongFunctionForDecoratorException,
-    MetricNotExistException,
-)
-from colmena.logger import Logger
+from colmena.decorators import BaseAbstractionDecorator
 
 
-class Metric:
+class Metric(BaseAbstractionDecorator):
     """
-    Decorator that can be used in __init__ functions of Role and Service.
-    It has an interface to call functions on the metric object.
+    Metric decorator subclass.
+    Metrics never have scope and use the key 'metric' (singular).
     """
-
     def __init__(self, name: str):
-        self.__name = name
-        self.__logger = Logger(self).get_logger()
-
-    @property
-    def name(self):
-        return self.__name
-
-    def __call__(self, func: Callable) -> Callable:
-        if func.__name__ in ("__init__", "logic"):
-
-            @wraps(func)
-            def logic(self_, *args, **kwargs):
-                parent_class_name = self_.__class__.__bases__[0].__name__
-                if parent_class_name == "Role":
-                    try:
-                        service_config = args[0].__init__.config
-                        if (
-                                "metrics" not in service_config
-                                or self.__name not in service_config["metrics"]
-                        ):
-                            raise MetricNotExistException(self.__name)
-                    except AttributeError:
-                        raise MetricNotExistException(self.__name)
-
-                    try:
-                        metrics = kwargs["metrics"]
-                    except KeyError:
-                        metrics = []
-                    metrics.append(self.__name)
-                    kwargs["metrics"] = metrics
-
-                elif not parent_class_name == "Service":
-                    raise WrongClassForDecoratorException(
-                        class_name=type(self_).__name__, dec_name="Metric"
-                    )
-
-                return func(self_, *args, **kwargs)
-
-        else:
-            raise WrongFunctionForDecoratorException(
-                func_name=func.__name__, dec_name="Metric"
-            )
-
-        try:
-            logic.config = func.config
-        except AttributeError:
-            logic.config = {}
-
-        if "metrics" not in logic.config:
-            logic.config["metrics"] = []
-        logic.config["metrics"].append(self.__name)
-        return logic
+        super().__init__(name=name, kind="metric", scope=None)

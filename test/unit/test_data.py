@@ -24,6 +24,7 @@ from colmena import Role, Service, Data, DataNotExistException
 
 class ServiceWithDataDec(Service):
     @Data(name='example_data', scope='*')
+    @Data(name='example_data_2')
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
@@ -46,14 +47,14 @@ class ServiceWithoutDataDec(Service):
 class TestData:
 
     def test_decorator_config_service(self):
-        data = ServiceWithDataDec.__init__.config['data']
-        assert data == {'example_data': '*'}
+        data = ServiceWithDataDec.__init__.config['data_info']
+        assert data == {'example_data': '*', 'example_data_2': None}
 
     def test_decorator_data_in_role(self):
-        assert ServiceWithDataDec().config['RoleWithDataDec']['data'] == ['example_data']
+        assert ServiceWithDataDec().config['RoleWithDataDec']['data_info'] == ['example_data']
 
         role = ServiceWithDataDec.RoleWithDataDec(ServiceWithDataDec)
-        assert role.data[0] == 'example_data'
+        assert role.data_info[0] == 'example_data'
 
         data_interface = role.example_data
 
@@ -72,23 +73,24 @@ class TestData:
         role = ServiceWithDataDec.RoleWithDataDec(ServiceWithDataDec)
 
         zenoh_client = Mock()
-        pyre_client = Mock()
+
         context_awareness = Mock()
-        context_awareness.context_aware_publish = Mock()
+        context_awareness.context_aware_data_get = Mock()
+        context_awareness.context_aware_data_set = Mock()
 
         role.comms._Communications__context_awareness = context_awareness
-        role.comms._Communications__pyre_client = pyre_client
-        role.comms._Communications__zenoh_client = zenoh_client
+        role.comms._Communications__zenoh_data_client = zenoh_client
 
         role.comms._Communications__initialize(role)
 
         data_interface = role.example_data
         data_interface.publish(0)
-        context_awareness.context_aware_publish.assert_called_once()
-        args = context_awareness.context_aware_publish.call_args.args
+        context_awareness.context_aware_data_set.assert_called_once()
+        args = context_awareness.context_aware_data_set.call_args.args
         assert args[0] == 'example_data'
         assert args[1]== 0
 
         data_interface.get()
-        kwargs = zenoh_client.get.call_args.kwargs
-        assert kwargs['key'] == 'example_data'
+        context_awareness.context_aware_data_get.assert_called_once()
+        args = context_awareness.context_aware_data_get.call_args.args
+        assert args[0] == 'example_data'

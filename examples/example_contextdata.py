@@ -19,64 +19,57 @@ import os
 # -*- coding: utf-8 -*-
 
 import time
-import numpy as np
+import random
 from colmena import (
     Service,
     Role,
-    Channel,
     Requirements,
-    Metric,
     Persistent,
-    Async,
-    KPI, Data, Context,
+    Context, Data, Metric, KPI
 )
 
-class Device(Context):
+class CompanyPremises(Context):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
     def locate(self, device):
-        location = {"id": os.getenv("COMPOSE_PROJECT_NAME", "default_device_id")}
+        agent_id = os.getenv("AGENT_ID")
+        location = {"building": agent_id}
         print(json.dumps(location))
 
-class ExampleSensorprocessor(Service):
-    @Context(class_ref=Device, name="device")
-    @Data(name="images", scope="device/id = .")
+class ExampleContextdata(Service):
+    @Context(class_ref=CompanyPremises, name="company_premises")
+    @Data(name="another_shared_data")
+    @Data(name="shared_data", scope="company_premises/building = .")
     @Metric(name="processing_time")
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-    class Sensing(Role):
-        @Context(class_ref=Device, name="device")
-        @Data(name="images", scope="device/id = .")
+    class Setter(Role):
         @Requirements("SENSOR")
-        def __init__(self, *args, **kwargs):
-            super().__init__(*args, **kwargs)
-
-        @Persistent()
-        def behavior(self):
-            payload = "test_string"
-            image = {
-                "payload": payload,
-                "timestamp": time.time(),
-            }
-            self.images.publish(image)
-            print(f"stored {payload} in shared data")
-            time.sleep(1)
-
-    class Processing(Role):
-        @Context(class_ref=Device, name="device")
-        @Data(name="images", scope="device/id = .")
+        @Context(class_ref=CompanyPremises, name="company_premises")
+        @Data(name="shared_data", scope="company_premises/building = .")
         @Metric(name="processing_time")
-        @Requirements("CPU")
-        @KPI("examplesensorprocessor/processing_time[5s] < 1")
         def __init__(self, *args, **kwargs):
             super().__init__(*args, **kwargs)
 
         @Persistent()
         def behavior(self):
-            image = json.loads(self.images.get().decode('utf-8'))
-            shared_data_payload = image["payload"]
-            print(f"Load from shared data {shared_data_payload}")
-            time.sleep(0.75) #simulate work
-            self.processing_time.publish(time.time() - image["timestamp"])
+            shared_data = {"some_data": "some_value"}
+            self.shared_data.publish(shared_data)
+            self.processing_time.publish(2)
+            time.sleep(5)
+
+    class Getter(Role):
+        @Requirements("GETTER")
+        @Context(class_ref=CompanyPremises, name="company_premises")
+        @Data(name="shared_data", scope="company_premises/building = .")
+        @Data(name="another_shared_data")
+        @KPI(query="avg_over_time(examplecontextdata_processing_time[5m]) < 5", scope="company_premises/building = .")
+        def __init__(self, *args, **kwargs):
+            super().__init__(*args, **kwargs)
+
+        @Persistent()
+        def behavior(self):
+            print(self.shared_data.get())
+            time.sleep(1)

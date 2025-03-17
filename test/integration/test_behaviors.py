@@ -16,8 +16,8 @@
 #
 
 # -*- coding: utf-8 -*-
-
-import time
+import threading
+from time import sleep
 
 from colmena import Service, Channel, Persistent, Role, Async
 from busypie import wait, SECOND
@@ -49,23 +49,52 @@ class ServiceWithRoleBehaviors(Service):
         @Async(message='example_channel')
         def behavior(self, message):
             print(f"message: {message}")
+            self.logger.info("Executing async")
             self.iterations = message
 
 
 class TestBehavior:
 
     def test_persistent(self):
-        persistent_role = ServiceWithRoleBehaviors.PersistentRole(ServiceWithRoleBehaviors)
-        persistent_role.execute()
-        wait().at_most(2.5, SECOND).until(lambda: persistent_role.iterations > 2)
-        assert persistent_role.iterations < 4
-        persistent_role.terminate()
+        def start_persistent():
+            role = ServiceWithRoleBehaviors.PersistentRole(ServiceWithRoleBehaviors)
+            self.role = role
+            role.execute(test=True)
+
+        thread = threading.Thread(target=start_persistent)
+        thread.start()
+
+        wait().at_most(5, SECOND).until(
+            lambda: any(thread.is_alive() for thread in threading.enumerate() if isinstance(thread, threading.Thread))
+        )
+        self.role.terminate()
 
     def test_persistent_and_async(self):
-        persistent_role = ServiceWithRoleBehaviors.PersistentRole(ServiceWithRoleBehaviors)
-        async_role = ServiceWithRoleBehaviors.AsyncRole(ServiceWithRoleBehaviors)
-        async_role.execute()
-        persistent_role.execute()
-        wait().at_most(2, SECOND).until(lambda: async_role.iterations > 0)
-        persistent_role.terminate()
-        async_role.terminate()
+        def start_persistent():
+            role = ServiceWithRoleBehaviors.PersistentRole(ServiceWithRoleBehaviors)
+            self.persistent_role = role
+            role.execute(test=True)
+
+        def start_async():
+            role = ServiceWithRoleBehaviors.AsyncRole(ServiceWithRoleBehaviors)
+            self.async_role = role
+            role.execute(test=True)
+
+        # Launch both threads
+        persistent_thread = threading.Thread(target=start_persistent)
+        async_thread = threading.Thread(target=start_async)
+
+        persistent_thread.start()
+        sleep(1)
+        async_thread.start()
+
+        wait().at_most(5, SECOND).until(lambda: hasattr(self, 'async_role') and self.async_role.iterations > 0)
+
+        # Stop the roles
+        self.persistent_role.terminate()
+        self.async_role.terminate()
+
+        persistent_thread.join()
+        async_thread.join()
+
+

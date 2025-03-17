@@ -1,6 +1,6 @@
-#!/usr/bin/python
+#!/usr/bin/env python3
 #
-#  Copyright 2002-2024 Barcelona Supercomputing Center (www.bsc.es)
+#  Copyright 2002-2025 Barcelona Supercomputing Center (www.bsc.es)
 #
 #  Licensed under the Apache License, Version 2.0 (the "License");
 #  you may not use this file except in compliance with the License.
@@ -44,8 +44,8 @@ class DataInterface:
         self.__get_method = func
 
     def publish(self, value: object):
-        self.__publish_method(key=self._name, value=value)
+        self.__publish_method(key=self._name, value=value, scope=self._scope)
 
     def get(self) -> bytes:
-        value = self.__get_method(key=self._name)
+        value = self.__get_method(key=self._name, scope=self._scope)
         return value

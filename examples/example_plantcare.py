@@ -35,8 +35,6 @@ class ExamplePlantcare(Service):
         super().__init__(*args, **kwargs)
 
     class Plantsensor(Role):
-        # @Metric(name="moisture/${PLANT_NAME}")
-        # number of players
         @Metric(name="moisture")
         @Requirements("SENSOR")
         def __init__(self, *args, **kwargs):
@@ -47,22 +45,16 @@ class ExamplePlantcare(Service):
 
         @Persistent()
         def behavior(self):
-            t = self.read_temp()
-            buf = f"{t}"
-            self.moisture.publish(buf)
+            self.moisture.publish(self.read_temp())
             time.sleep(1)
 
     class Plantwatering(Role):
         @Requirements("WATERING")
-        # @KPI("exampleplantcare/moisture/${PLANT_NAME}[5s] > ${PLANT_NAME_THRESHOLD}")
         @KPI("exampleplantcare/moisture[5s] > 20")
         def __init__(self, *args, **kwargs):
             super().__init__(*args, **kwargs)
 
         @Persistent()
         def behavior(self):
-            # plant_name = message.getName()
-            # watering.water(port)
             print("watering ${PLANT_NAME_WATERING_COMPONENT}...")
-            # water ${PLANT_NAME}
             time.sleep(1)

@@ -1,6 +1,6 @@
-#!/usr/bin/python
+#!/usr/bin/env python3
 #
-#  Copyright 2002-2024 Barcelona Supercomputing Center (www.bsc.es)
+#  Copyright 2002-2025 Barcelona Supercomputing Center (www.bsc.es)
 #
 #  Licensed under the Apache License, Version 2.0 (the "License");
 #  you may not use this file except in compliance with the License.
@@ -46,5 +46,5 @@ class ChannelInterface:
     def publish(self, message: object):
         self.__publish_method(key=self._name, value=message)
 
-    def receive(self):
+    def subscriber(self):
         return self.__subscribe_method(key=self._name)

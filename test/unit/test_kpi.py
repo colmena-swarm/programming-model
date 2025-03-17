@@ -39,7 +39,7 @@ class TestKPI:
         role = ServiceWithoutKPIDec.RoleWithKPIDec(ServiceWithoutKPIDec)
         assert role.kpis[0] == 'example_kpi_expression'
 
-        assert ServiceWithoutKPIDec().config['RoleWithKPIDec']['kpis'] == ['example_kpi_expression']
+        assert ServiceWithoutKPIDec().config['RoleWithKPIDec']['kpis'] == [{'query': 'example_kpi_expression'}]
 
     def test_service_kpi(self):
         service = ServiceWithKPIDec()

@@ -47,14 +47,14 @@ class ServiceWithoutMetricDec(Service):
 class TestMetric:
 
     def test_decorator_config_service(self):
-        metrics = ServiceWithMetricDec.__init__.config['metrics']
+        metrics = ServiceWithMetricDec.__init__.config['metric_info']
         assert metrics == ['example_metric']
 
-    def test_decorator_data_in_role(self):
-        assert ServiceWithMetricDec().config['RoleWithMetricDec']['metrics'] == ['example_metric']
+    def test_decorator_metric_in_role(self):
+        assert ServiceWithMetricDec().config['RoleWithMetricDec']['metric_info'] == ['example_metric']
 
         role = ServiceWithMetricDec.RoleWithMetricDec(ServiceWithMetricDec)
-        assert role.metrics[0] == 'example_metric'
+        assert role.metric_info[0] == 'example_metric'
 
         metric_interface = role.example_metric
 
@@ -73,13 +73,11 @@ class TestMetric:
         role = ServiceWithMetricDec.RoleWithMetricDec(ServiceWithMetricDec)
 
         zenoh_client = Mock()
-        pyre_client = Mock()
         context_awareness = Mock()
         context_awareness.context_aware_publish = Mock()
 
         role.comms._Communications__context_awareness = context_awareness
-        role.comms._Communications__pyre_client = pyre_client
-        role.comms._Communications__zenoh_client = zenoh_client
+        role.comms._Communications__zenoh_metrics_client = zenoh_client
 
         role.comms._Communications__initialize(role)
 

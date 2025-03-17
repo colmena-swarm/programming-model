@@ -1,6 +1,6 @@
-#!/usr/bin/python
+#!/usr/bin/env python3
 #
-#  Copyright 2002-2024 Barcelona Supercomputing Center (www.bsc.es)
+#  Copyright 2002-2025 Barcelona Supercomputing Center (www.bsc.es)
 #
 #  Licensed under the Apache License, Version 2.0 (the "License");
 #  you may not use this file except in compliance with the License.
@@ -17,7 +17,7 @@
 
 # -*- coding: utf-8 -*-
 
-__version__ = "0.1.2"
+__version__ = "0.1.4"
 
 from colmena.decorators import Channel, Data, Dependencies, KPI, Metric, Requirements, Version, Async, Persistent
 from colmena.abstractions import ChannelInterface, DataInterface, MetricInterface

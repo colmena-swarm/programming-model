@@ -1,6 +1,6 @@
-#!/usr/bin/python
+#!/usr/bin/env python3
 #
-#  Copyright 2002-2024 Barcelona Supercomputing Center (www.bsc.es)
+#  Copyright 2002-2025 Barcelona Supercomputing Center (www.bsc.es)
 #
 #  Licensed under the Apache License, Version 2.0 (the "License");
 #  you may not use this file except in compliance with the License.
@@ -95,7 +95,8 @@ def write_dependencies(path: str, dependencies: list[str], colmena_build_path: s
         if colmena_build_path is None:
             file.write(f"colmena-swarm-pm[role]=={colmena.__version__}\n")
         else:
-            file.write(f"colmena-swarm-pm[role] @ file://{colmena_build_path}\n")
+            file_name = colmena_build_path.split("/")[-1]
+            file.write(f"colmena-swarm-pm[role] @ file:///home/dist/{file_name}\n")
         if dependencies is not None:
             file.write("\n".join(dependencies))
 
@@ -135,7 +136,7 @@ def create_build_folders(
         os.mkdir(f"{service_code_path}/{module_name}/build/context")
         for context_key, context_value in contexts.items():
             path = f"{service_code_path}/{module_name}/build/context/{context_key}"
-            copy_files(context_key, path, service_code_path, module_name, project_path)
+            copy_files(context_key, path, service_code_path, module_name, project_path, colmena_build_path)
             try:
                 write_dependencies(path, context_value.dependencies, colmena_build_path)
             except AttributeError:
@@ -148,7 +149,7 @@ def create_build_folders(
 
     for role_name in roles:
         path = f"{service_code_path}/{module_name}/build/{role_name}"
-        copy_files(role_name, path, service_code_path, module_name, project_path)
+        copy_files(role_name, path, service_code_path, module_name, project_path, colmena_build_path)
         try:
             write_dependencies(path, config[role_name]['dependencies'], colmena_build_path)
         except KeyError:
@@ -160,11 +161,15 @@ def create_build_folders(
         create_main(f"{path}/{role_name}", module_name, service_name, role_name, version)
 
 
-def copy_files(package_name: str, path: str, service_code_path: str, module_name: str, project_path: str):
+def copy_files(package_name: str, path: str, service_code_path: str, module_name: str, project_path: str, colmena_build_path: str = None):
     shutil.copytree(f"{project_path}/templates", path)
     os.mkdir(f"{path}/{package_name}")
     shutil.copyfile(f"{service_code_path}/{module_name}.py", f"{path}/{package_name}/{module_name}.py")
     adapt_name(path.split("/")[-1], f"{path}/pyproject.toml")
+    if colmena_build_path is not None:
+        file_name = colmena_build_path.split("/")[-1]
+        os.mkdir(f"{path}/dist")
+        shutil.copyfile(colmena_build_path, f"{path}/dist/{file_name}")
 
 
 def create_main(path: str, module_name: str, service_name: str, role_name: str, version: str):
@@ -264,13 +269,27 @@ def main():
         default="examples/example_cameraprocessors.py",
     )
 
+    parser.add_argument(
+        "--build_file",
+        help="Path to the build file (otherwise it will use the version in PyPI)",
+        default=False,
+    )
+
     args = parser.parse_args()
 
     print(f"Building service: {args.service_path}")
 
-    build(
-        service_module_path=args.service_path
-    )
+    if args.build_file:
+        build(
+            service_module_path=args.service_path, colmena_build_path=args.build_file
+        )
+
+    else:
+        build(
+            service_module_path=args.service_path
+        )
+
+
 
 
 def adapt_name(name, path):

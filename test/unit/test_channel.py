@@ -46,12 +46,12 @@ class ServiceWithoutChannelDec(Service):
 class TestChannel:
 
     def test_decorator_config_service(self):
-        channel = ServiceWithChannelDec.__init__.config['channels']
+        channel = ServiceWithChannelDec.__init__.config['channel_info']
         assert channel == {'example_channel': '*'}
 
-    def test_decorator_data_in_role(self):
+    def test_decorator_channel_in_role(self):
         role = ServiceWithChannelDec.RoleWithChannelDec(ServiceWithChannelDec)
-        assert role.channels[0] == 'example_channel'
+        assert role.channel_info[0] == 'example_channel'
 
         channel_interface = role.example_channel
 
@@ -67,25 +67,18 @@ class TestChannel:
         assert False
 
     def test_interface(self):
-        assert ServiceWithChannelDec().config['RoleWithChannelDec']['channels'] == ['example_channel']
+        assert ServiceWithChannelDec().config['RoleWithChannelDec']['channel_info'] == ['example_channel']
 
         role = ServiceWithChannelDec.RoleWithChannelDec(ServiceWithChannelDec)
 
         pyre_client = Mock()
-        context_awareness = Mock()
-        context_awareness.context_aware_publish = Mock()
 
-        role.comms._Communications__context_awareness = context_awareness
         role.comms._Communications__pyre_client = pyre_client
         role.comms._Communications__initialize(role)
 
         channel_interface = role.example_channel
         channel_interface.publish(0)
-        context_awareness.context_aware_publish.assert_called_once()
-        args = context_awareness.context_aware_publish.call_args.args
-        assert args[0] == 'example_channel'
-        assert args[1] == 0
 
-        channel_interface.receive()
+        channel_interface.subscriber().receive()
         kwargs = pyre_client.subscribe.call_args.kwargs
         assert kwargs['key'] == 'example_channel'

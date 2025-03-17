@@ -2,6 +2,23 @@ Following are change highlights associated with official releases.  Important
 bug fixes are all mentioned, but some internal enhancements are omitted here for
 brevity.  Much more detail can be found in the git revision history:
 
+[1.0.0] - 2025-09
+Added:
+    * local builds
+    * data and metrics with context
+    * Roles include function to stop them
+    * Dependencies decorator
+Enhancements:
+    * testing
+    * building tool's options
+    
+
+[0.1.3] - 2025-03
+Added:
+Removed:
+Bugfixes:
+    * fix numpy dependency bug
+
 [0.1.2] - 2025-03
 Added:
 Removed:

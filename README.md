@@ -124,13 +124,14 @@ Alternatively, the service can also be created using docker:
 	```bash
 	docker --debug build -t colmenaswarm/programming-model:latest .
 	```
-2. Execute the image mounting as a volume the folder containing the code of service.
+2. Execute the image mounting as a volume the folder containing the code of service. 
 	```bash
-	docker run --rm \
-		-v <path-to-application>:/app \
-		colmenaswarm/programming-model:latest \
-		--service_path=<path_to_the_service_root>
-	```
+    docker run --rm \
+        -v <path-to-application>:/app \
+        colmenaswarm/programming-model:latest \
+        --service_path=/app/<service_filename>
+ 	```
+ The build files will be included in the service folder specified.
 
 ## Testing
 
@@ -143,6 +144,15 @@ python3 -m pytest test_examples.py
 The tests will make sure that all the files and folders are created properly (test_build_files), that the roles of each service execute without errors (test_roles_in_services), and that the build command runs (test_build).
 
 For adding a new test/example, include the code of the service in the folder and also the reference service model JSON file to compare with. Bear in mind to include it as part of the testing script in order to execute it automatically.
+
+Besides the unit tests, it is possible to build a service code using the local version of the programming model. To do so, first build the distribution files using Python:
+```bash
+python3 -m build 
+```
+When building the service, add the variable ```build_file``` including the generated .tar.gz file from the dist/ folder:
+``` bash
+    colmena_build --service_path="<path_to_the_service_root>" --build_file="<path_to_build_file>" \
+ ```
 
 ## Contributing
 Please read our [contribution guidelines](CONTRIBUTING.md) before making a pull request.

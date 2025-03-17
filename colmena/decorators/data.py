@@ -1,6 +1,6 @@
-#!/usr/bin/python
+#!/usr/bin/env python3
 #
-#  Copyright 2002-2024 Barcelona Supercomputing Center (www.bsc.es)
+#  Copyright 2002-2025 Barcelona Supercomputing Center (www.bsc.es)
 #
 #  Licensed under the Apache License, Version 2.0 (the "License");
 #  you may not use this file except in compliance with the License.
@@ -17,78 +17,12 @@
 
 # -*- coding: utf-8 -*-
 
-from typing import Callable
-from functools import wraps
-from colmena.exceptions import (
-    WrongClassForDecoratorException,
-    WrongFunctionForDecoratorException,
-    DataNotExistException,
-)
-from colmena.logger import Logger
+from colmena.decorators import BaseAbstractionDecorator
 
-
-class Data:
+class Data(BaseAbstractionDecorator):
     """
-    Decorator that can be used in __init__ functions of Role and Service.
-    It has an interface to call functions on the data object.
+    Data decorator subclass.
+    Data can have optional scope.
     """
-
     def __init__(self, name: str, scope: str = None):
-        self.__name = name
-        self.__scope = scope
-        self.__logger = Logger(self).get_logger()
-
-    @property
-    def name(self):
-        return self.__name
-
-    def __call__(self, func: Callable) -> Callable:
-        if func.__name__ in ("__init__", "logic"):
-
-            @wraps(func)
-            def logic(self_, *args, **kwargs):
-                parent_class_name = self_.__class__.__bases__[0].__name__
-
-                if parent_class_name == "Role":
-                    try:
-                        service_config = args[0].__init__.config
-                        scope = service_config["data"][self.__name]
-                    except (AttributeError, KeyError):
-                        raise DataNotExistException(data_name=self.__name)
-
-                    try:
-                        data = kwargs["data"]
-                    except KeyError:
-                        data = {}
-
-                    data[self.name] = scope
-                    kwargs["data"] = data
-
-                elif not parent_class_name == "Service":
-                    raise WrongClassForDecoratorException(
-                        class_name=type(self_).__name__, dec_name="Data"
-                    )
-                return func(self_, *args, **kwargs)
-
-        else:
-            raise WrongFunctionForDecoratorException(
-                func_name=func.__name__, dec_name="Data"
-            )
-        try:
-            logic.config = func.config
-        except AttributeError:
-            logic.config = {}
-
-        if self.__scope is None:
-            try:
-                logic.config["data"].append(self.__name)
-            except KeyError:
-                logic.config["data"] = [self.__name]
-
-        else:
-            try:
-                logic.config["data"][self.__name] = self.__scope
-            except KeyError:
-                logic.config["data"] = {self.__name: self.__scope}
-
-        return logic
+        super().__init__(name=name, kind="data", scope=scope)

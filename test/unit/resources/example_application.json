@@ -25,7 +25,9 @@
         "CPU"
       ],
       "kpis": [
-        "buffer_queue_size[100000000s] < 10"
+        {
+          "query": "buffer_queue_size[100000000s] < 10"
+        }
       ]
     }
   ]
