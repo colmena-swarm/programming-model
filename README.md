@@ -129,8 +129,7 @@ Alternatively, the service can also be created using docker:
 	docker run --rm \
 		-v <path-to-application>:/app \
 		colmenaswarm/programming-model:latest \
-		--module_name=<service_modulename> \
-		--service_name=<service_classname> 
+		--service_path=<path_to_the_service_root>
 	```
 
 ## Testing
