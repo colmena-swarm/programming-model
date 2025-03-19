@@ -280,11 +280,16 @@ def main():
     print(f"Building service: {args.service_path}")
 
     if args.build_file:
-        colmena_build_path = args.build_file
+        build(
+            service_module_path=args.service_path, colmena_build_path=args.build_file
+        )
 
-    build(
-        service_module_path=args.service_path, colmena_build_path=colmena_build_path
-    )
+    else:
+        build(
+            service_module_path=args.service_path
+        )
+
+
 
 
 def adapt_name(name, path):
