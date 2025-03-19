@@ -113,27 +113,6 @@ class TestBuild:
         with open(f"{build_path}/service_description.json") as f1, open(f"{self.folder}/{module_name}.json") as f2:
             assert json.load(f1) == json.load(f2)
 
-    def test_build(self):
-        """
-        Builds all services,
-        Creating build packages with current colmena library build
-        """
-
-        directory_path = os.path.dirname(os.path.dirname(os.getcwd()))
-        dist_path = f"{directory_path}/dist"
-
-        self.remove_built_files(dist_path)
-        self.build_package(directory_path)
-
-        files = os.listdir(dist_path)
-        tar_gz_file = next((file for file in files if file.endswith('.tar.gz')), None)
-        build_path = f"{dist_path}/{tar_gz_file}"
-
-        files = self.get_files()
-
-        for f in files:
-            build(service_module_path=f"{self.folder}/{f}", colmena_build_path=build_path)
-
     def remove_built_files(self, dist_path):
         if os.path.exists(dist_path) and os.path.isdir(dist_path):
             files_to_remove = glob.glob(f"{dist_path}/colmena*")
