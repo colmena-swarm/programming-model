@@ -67,7 +67,10 @@ class Channel:
     def role_decorator_call(self, *args, **kwargs):
         try:
             service_config = args[0].__init__.config
-            scope = service_config["channels"][self.__name]
+            try:
+                scope = service_config["channels"][self.__name]
+            except TypeError:
+                scope = None
         except (AttributeError, KeyError) as exc:
             raise ChannelNotExistException(channel_name=self.__name) from exc
 

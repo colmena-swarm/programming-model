@@ -79,7 +79,6 @@ class ContextAwareness:
         if scope is None:
             return getter(key)
 
-
         match = re.match(pattern, scope)
         if match:
             context_name = match.group(1)
@@ -100,7 +99,7 @@ class ContextAwareness:
             raise ValueError(f"scope {scope} has invalid format")
 
     def context_aware_data_set(self, key: str, value: object, setter, scope: str = None):
-        if scope is None:
+        if not scope:
             setter(key, value)
             return
 
