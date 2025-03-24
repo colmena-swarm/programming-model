@@ -53,15 +53,16 @@ class Context:
         self.scope = new_scope
 
 class ContextAwareness:
-    def __init__(self, context_subscriber: ZenohClient, context_names):
+    def __init__(self, context_names):
+        self.context_subscriber = ZenohClient("dockerContextDefinitions")
         self.__logger = Logger(self).get_logger()
         self.contexts = {}
         # create context update subscription for each context hierarchy in the role
         for context_name in context_names:
-            initial_value = context_subscriber.get(context_name)
+            initial_value = self.context_subscriber.get(context_name)
             subscription = Context(context_name, initial_value)
             self.contexts[context_name] = subscription
-            context_subscriber.subscribe_with_handler(context_name, subscription.handler)
+            self.context_subscriber.subscribe_with_handler(context_name, subscription.handler)
 
     def context_aware_publish(self, key: str, value: object, publisher):
         if old_sla:

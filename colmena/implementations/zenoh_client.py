@@ -31,56 +31,43 @@ class ZenohClient:
         self._logger = Logger(self).get_logger()
         self._publishers = {}
         self._subscribers = {}
-        self._session = None
+        self._session = zenoh.open()
         self._root = root
-
-    @property
-    def __session(self):
-        if self._session is None:
-            self._session = zenoh.open()
-        return self._session
-
-    @__session.setter
-    def __session(self, s):
-        self._session = s
 
     def publish(self, key: str, value: object):
         try:
             self._publishers[key].put(value)
             self._logger.debug(f"Published key: '{self._root}/{key}', value: '{value}'")
         except KeyError:
-            self._publishers[key] = self.__session.declare_publisher(
+            self._publishers[key] = self._session.declare_publisher(
                 f"{self._root}/{key}"
             )
             self._logger.debug(f"New publisher. key: '{self._root}/{key}'")
             self.publish(key, value)
-        self.__session.close()
 
     def subscribe(self, key: str):
         try:
             return self._subscribers[key]
         except KeyError:
-            self._subscribers[key] = self.__session.declare_subscriber(
-                f"{self._root}/{key}", zenoh.Queue(), reliability=Reliability.RELIABLE()
-            )
+            self._subscribers[key] = self._session.declare_subscriber(
+                f"{self._root}/{key}", zenoh.Queue())
+            self._logger.debug(f"New queue subscription. key: '{self._root}/{key}'")
             return self._subscribers[key]
 
     def subscribe_with_handler(self, key: str, handler):
-        subscription = self.__session.declare_subscriber(f"{self._root}/{key}", handler)
+        subscription = self._session.declare_subscriber(f"{self._root}/{key}", handler)
         self._subscribers[key] = subscription
-        self._logger.debug(f"New subscription. key: '{self._root}/{key}'")
+        self._logger.debug(f"New handler subscription. key: '{self._root}/{key}'")
 
     def put(self, key: str, value: bytes):
-        self.__session.put(f"{self._root}/{key}", value)
+        self._session.put(f"{self._root}/{key}", value)
         self._logger.debug(f"New data value stored: '{self._root}/{key}'")
-        self.__session.close()
 
     def get(self, key: str) -> object:
         while True:
-            replies = self.__session.get(f"{self._root}/{key}", zenoh.ListCollector())
+            replies = self._session.get(f"{self._root}/{key}", zenoh.ListCollector())
             try:
-                reply = replies()[0].ok.payload
-                self.__session.close()
+                reply = replies()[-1].ok.payload
                 return reply
             except IndexError:
                 self._logger.debug(f"could not get from zenoh. key: {self._root}/{key}")

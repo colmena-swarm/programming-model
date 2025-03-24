@@ -43,7 +43,7 @@ class Communications:
         self.__pyre_client = PyreClient()
         self.__pyre_client.start()
         self.__zenoh_client = ZenohClient(zenoh_root)
-        self.__context_awareness = ContextAwareness(ZenohClient("dockerContextDefinitions"), get_context_names(role))
+        self.__context_awareness = ContextAwareness(get_context_names(role))
         self.__initialize(role)
 
     def __initialize(self, role: "colmena.Role"):
