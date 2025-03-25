@@ -53,16 +53,16 @@ class Context:
         self.scope = new_scope
 
 class ContextAwareness:
-    def __init__(self, context_names):
-        self.context_subscriber = ZenohClient("dockerContextDefinitions")
+    def __init__(self, context_subscriber: ZenohClient, context_names):
         self.__logger = Logger(self).get_logger()
         self.contexts = {}
-        # create context update subscription for each context hierarchy in the role
+
+        # Get initial value for each context and then subscribe for updates
         for context_name in context_names:
-            initial_value = self.context_subscriber.get(context_name)
+            initial_value = context_subscriber.get_agent(context_name)
             subscription = Context(context_name, initial_value)
             self.contexts[context_name] = subscription
-            self.context_subscriber.subscribe_with_handler(context_name, subscription.handler)
+            context_subscriber.subscribe(context_name, subscription.handler)
 
     def context_aware_publish(self, key: str, value: object, publisher):
         if old_sla:
@@ -91,7 +91,7 @@ class ContextAwareness:
                     context = self.contexts[context_name]
                     scope_value = json.loads(context.scope)[scope_key]
                     return getter(f"{context_name}/{scope_key}/{scope_value}/{key}")
-                except KeyError:
+                except Exception:
                     self.__logger.info(f"context_name {context_name} not set")
                     return {}
             else:
@@ -116,7 +116,7 @@ class ContextAwareness:
                     scope_value = json.loads(context.scope)[scope_key]
                     self.__logger.info(f"data key {context_name}/{scope_key}/{scope_value}/{key}, value {value}")
                     setter(f"{context_name}/{scope_key}/{scope_value}/{key}", value)
-                except KeyError:
+                except Exception:
                     self.__logger.info(f"context_name {context_name} not set")
                     return
             else:

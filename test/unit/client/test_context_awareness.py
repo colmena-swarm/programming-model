@@ -22,6 +22,7 @@ import unittest
 
 from colmena.implementations.context_awareness import ContextAwareness
 from unittest.mock import Mock
+import pandas as pd
 
 
 class TestPublication:
@@ -32,20 +33,19 @@ class TestPublication:
 def to_json(value):
     return json.dumps({"value": value}, indent=4)
 
-
+# fails when context awareness old_sla = True
 class TestContextAwareness(unittest.TestCase):
 
     def setUp(self):
         self.publish = Mock()
         self.zenoh_client = Mock()
-        self.zenoh_client.get = Mock()
+        self.zenoh_client.get_agent = Mock()
         self.zenoh_client.subscribe = Mock()
-        self.zenoh_client.get.return_value = (to_json('{"building": "BSC", "floor": "1", "room": "reception"}')).encode()
-
+        self.zenoh_client.get_agent.return_value = to_json('{"building": "BSC", "floor": "1", "room": "reception"}').encode()
 
     def test_subscribes_to_context_updates_and_uses_scope_during_publish(self):
         self.context_awareness = ContextAwareness(self.zenoh_client, ["test_context"])
-        args, _ = self.zenoh_client.subscribe_with_handler.call_args
+        args, _ = self.zenoh_client.subscribe.call_args
         subscription_handler = args[1]
 
         subscription_handler(TestPublication(to_json('{"building": "BSC", "floor": "2", "room": "reception"}').encode()))

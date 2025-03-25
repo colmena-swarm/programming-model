@@ -14,18 +14,15 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 #
-
 # -*- coding: utf-8 -*-
-
+import os
 import time
-
-# -*- coding: utf-8 -*-
-
-from zenoh import Reliability
 import zenoh
 from colmena.logger import Logger
 
-
+def agent_id():
+    return os.getenv("AGENT_ID")
+ 
 class ZenohClient:
     def __init__(self, root: str):
         self._logger = Logger(self).get_logger()
@@ -35,40 +32,42 @@ class ZenohClient:
         self._root = root
 
     def publish(self, key: str, value: object):
+        composite_key = f"{self._root}/{key}/{agent_id()}"
         try:
             self._publishers[key].put(value)
-            self._logger.debug(f"Published key: '{self._root}/{key}', value: '{value}'")
+            self._logger.debug(f"published. key: '{composite_key}', value: '{value}'")
         except KeyError:
-            self._publishers[key] = self._session.declare_publisher(
-                f"{self._root}/{key}"
-            )
-            self._logger.debug(f"New publisher. key: '{self._root}/{key}'")
+            self._publishers[key] = self._session.declare_publisher(f"{composite_key}")
+            self._logger.debug(f"new publisher. key: '{composite_key}'")
             self.publish(key, value)
 
-    def subscribe(self, key: str):
-        try:
-            return self._subscribers[key]
-        except KeyError:
-            self._subscribers[key] = self._session.declare_subscriber(
-                f"{self._root}/{key}", zenoh.Queue())
-            self._logger.debug(f"New queue subscription. key: '{self._root}/{key}'")
-            return self._subscribers[key]
-
-    def subscribe_with_handler(self, key: str, handler):
-        subscription = self._session.declare_subscriber(f"{self._root}/{key}", handler)
+    def subscribe(self, key: str, handler):
+        composite_key = f"{self._root}/{key}/{agent_id()}"
+        subscription = self._session.declare_subscriber(f"{composite_key}", handler)
         self._subscribers[key] = subscription
-        self._logger.debug(f"New handler subscription. key: '{self._root}/{key}'")
+        self._logger.debug(f"new handler subscription. key: '{composite_key}'")
 
     def put(self, key: str, value: bytes):
-        self._session.put(f"{self._root}/{key}", value)
-        self._logger.debug(f"New data value stored: '{self._root}/{key}'")
+        composite_key = f"{self._root}/{key}/{agent_id()}"
+        self._session.put(f"{composite_key}", value)
+        self._logger.debug(f"new data value stored: '{composite_key}'")
+
+    def get_agent(self, key: str) -> object:
+        composite_key = f"{self._root}/{key}/{agent_id()}"
+        return self._get(composite_key)
 
     def get(self, key: str) -> object:
+        composite_key = f"{self._root}/{key}/*"
+        return self._get(composite_key)
+
+    def _get(self, key: str):
         while True:
-            replies = self._session.get(f"{self._root}/{key}", zenoh.ListCollector())
+            replies = self._session.get(f"{key}", zenoh.ListCollector())
             try:
-                reply = replies()[-1].ok.payload
-                return reply
-            except IndexError:
-                self._logger.debug(f"could not get from zenoh. key: {self._root}/{key}")
+                reply = max(replies(), key=lambda e: e.ok.timestamp)
+                message_payload = reply.ok.payload
+                self._logger.debug(f"new value retrieved. key: {key}, value: {message_payload}")
+                return message_payload
+            except (IndexError, ValueError):
+                self._logger.debug(f"could not get from zenoh. key: {key}")
                 time.sleep(1)

@@ -39,14 +39,13 @@ class TestContextAwareness(unittest.TestCase):
         self.setter = Mock()
         self.getter = Mock()
         self.zenoh_client = Mock()
-        self.zenoh_client.get = Mock()
+        self.zenoh_client.get_agent = Mock()
         self.zenoh_client.subscribe = Mock()
-        self.zenoh_client.get.return_value = (to_json('{"building": "BSC", "floor": "1", "room": "reception"}')).encode()
-
+        self.zenoh_client.get_agent.return_value = (to_json('{"building": "BSC", "floor": "1", "room": "reception"}')).encode()
 
     def test_set_without_scope_at_top_level(self):
         self.context_awareness = ContextAwareness(self.zenoh_client, ["test_context"])
-        args, _ = self.zenoh_client.subscribe_with_handler.call_args
+        args, _ = self.zenoh_client.subscribe.call_args
         subscription_handler = args[1]
 
         subscription_handler(TestPublication(to_json('{"building": "BSC", "floor": "2", "room": "reception"}').encode()))
@@ -58,7 +57,7 @@ class TestContextAwareness(unittest.TestCase):
 
     def test_given_scope_not_requiring_resolution_then_correctly_used(self):
         self.context_awareness = ContextAwareness(self.zenoh_client, ["test_context"])
-        args, _ = self.zenoh_client.subscribe_with_handler.call_args
+        args, _ = self.zenoh_client.subscribe.call_args
         subscription_handler = args[1]
 
         subscription_handler(TestPublication(to_json('{"building": "BSC", "floor": "2", "room": "reception"}').encode()))
@@ -70,7 +69,7 @@ class TestContextAwareness(unittest.TestCase):
 
     def test_different_scope_syntax(self):
         self.context_awareness = ContextAwareness(self.zenoh_client, ["test_context"])
-        args, _ = self.zenoh_client.subscribe_with_handler.call_args
+        args, _ = self.zenoh_client.subscribe.call_args
         subscription_handler = args[1]
         subscription_handler(
             TestPublication(to_json('{"building": "BSC", "floor": "2", "room": "reception"}').encode()))
@@ -81,7 +80,7 @@ class TestContextAwareness(unittest.TestCase):
 
     def test_given_scope_requiring_resolution_then_correctly_resolved(self):
         self.context_awareness = ContextAwareness(self.zenoh_client, ["test_context"])
-        args, _ = self.zenoh_client.subscribe_with_handler.call_args
+        args, _ = self.zenoh_client.subscribe.call_args
         subscription_handler = args[1]
 
         subscription_handler(TestPublication(to_json('{"building": "BSC", "floor": "2", "room": "reception"}').encode()))
