@@ -24,6 +24,7 @@ from colmena import Role, Service, Data, DataNotExistException
 
 class ServiceWithDataDec(Service):
     @Data(name='example_data', scope='*')
+    @Data(name='example_data_2')
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
@@ -47,7 +48,7 @@ class TestData:
 
     def test_decorator_config_service(self):
         data = ServiceWithDataDec.__init__.config['data']
-        assert data == {'example_data': '*'}
+        assert data == {'example_data': '*', 'example_data_2': None}
 
     def test_decorator_data_in_role(self):
         assert ServiceWithDataDec().config['RoleWithDataDec']['data'] == ['example_data']

@@ -84,12 +84,17 @@ class Data:
 
         if self.__scope is None:
             try:
-                logic.config["data"].append(self.__name)
+                if isinstance(logic.config["data"], list):
+                    logic.config["data"].append(self.__name)
             except KeyError:
                 logic.config["data"] = [self.__name]
+            else:
+                logic.config["data"][self.__name] = None
 
         else:
             try:
+                if isinstance(logic.config["data"], list):
+                    logic.config["data"] = {data: None for data in logic.config["data"]}
                 logic.config["data"][self.__name] = self.__scope
             except KeyError:
                 logic.config["data"] = {self.__name: self.__scope}
