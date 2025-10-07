@@ -21,11 +21,12 @@ import json
 import os
 import shutil
 from typing import Dict, List
+from datetime import datetime
 import colmena
 
 
 def build(
-        service_module_path: str, colmena_build_path : str = None):
+        service_module_path: str, colmena_build_path: str = None):
     """
     Creates the folder with the build files, including source code, service description, and Dockerfile.
 
@@ -62,7 +63,7 @@ def build(
         try:
             version = service.config[role_name]['version']
         except KeyError:
-            version = 'latest'
+            version = datetime.utcnow().strftime('%Y%m%d%H%M%S%f')
         tags[role_name] = f"{lowercase(role_name)}:{version}"
 
     if service.context is not None:
@@ -70,7 +71,7 @@ def build(
             try:
                 version = service.context[context_name].version
             except AttributeError:
-                version = 'latest'
+                version = datetime.utcnow().strftime('%Y%m%d%H%M%S%f')
             tags[context_name] = f"{lowercase(context_name)}:{version}"
 
         write_service_description(
@@ -136,7 +137,9 @@ def create_build_folders(
         os.mkdir(f"{service_code_path}/{module_name}/build/context")
         for context_key, context_value in contexts.items():
             path = f"{service_code_path}/{module_name}/build/context/{context_key}"
-            copy_files(context_key, path, service_code_path, module_name, project_path, colmena_build_path)
+
+            base_image = getattr(config, "base_image", None)
+            copy_files(context_key, path, service_code_path, module_name, project_path, colmena_build_path, base_image)
             try:
                 write_dependencies(path, context_value.dependencies, colmena_build_path)
             except AttributeError:
@@ -149,7 +152,9 @@ def create_build_folders(
 
     for role_name in roles:
         path = f"{service_code_path}/{module_name}/build/{role_name}"
-        copy_files(role_name, path, service_code_path, module_name, project_path, colmena_build_path)
+        base_image = config.get(role_name, {}).get("base_image")
+
+        copy_files(role_name, path, service_code_path, module_name, project_path, colmena_build_path, base_image)
         try:
             write_dependencies(path, config[role_name]['dependencies'], colmena_build_path)
         except KeyError:
@@ -161,8 +166,12 @@ def create_build_folders(
         create_main(f"{path}/{role_name}", module_name, service_name, role_name, version)
 
 
-def copy_files(package_name: str, path: str, service_code_path: str, module_name: str, project_path: str, colmena_build_path: str = None):
+def copy_files(package_name: str, path: str, service_code_path: str, module_name: str, project_path: str,
+               colmena_build_path: str = None, base_image: str = None):
     shutil.copytree(f"{project_path}/templates", path)
+
+    write_dockerfile(path, package_name, base_image)
+
     os.mkdir(f"{path}/{package_name}")
     shutil.copyfile(f"{service_code_path}/{module_name}.py", f"{path}/{package_name}/{module_name}.py")
     adapt_name(path.split("/")[-1], f"{path}/pyproject.toml")
@@ -170,6 +179,20 @@ def copy_files(package_name: str, path: str, service_code_path: str, module_name
         file_name = colmena_build_path.split("/")[-1]
         os.mkdir(f"{path}/dist")
         shutil.copyfile(colmena_build_path, f"{path}/dist/{file_name}")
+
+
+def write_dockerfile(path: str, package_name: str, base_image: str = None):
+    dockerfile_path = os.path.join(path, "Dockerfile")
+    with open(dockerfile_path, "r") as f:
+        dockerfile_content = f.read()
+
+    if base_image is None:
+        base_image = "python:3.11-slim-bookworm"
+
+    dockerfile_content = dockerfile_content.replace("{{BASE_IMAGE}}", base_image)
+    dockerfile_content = dockerfile_content.replace("{{PACKAGE_NAME}}", package_name)
+    with open(dockerfile_path, "w") as f:
+        f.write(dockerfile_content)
 
 
 def create_main(path: str, module_name: str, service_name: str, role_name: str, version: str):
@@ -183,16 +206,18 @@ def create_main(path: str, module_name: str, service_name: str, role_name: str, 
         role_name: name of the role
     """
     with open(f"{path}/main.py", "w") as f:
-        print(f"from .{module_name} import {service_name}\n\n", file=f)
+        print(f"from {module_name} import {service_name}\n\n", file=f)
         print(f"__version__ = '{version}'", file=f)
         print("def main():", file=f)
         print(f"\tr = {service_name}.{role_name}({service_name})", file=f)
         print("\tr.execute()", file=f)
+        print("if __name__ == '__main__':", file=f)
+        print(f"\tmain()", file=f)
 
 
 def create_main_context(path: str, module_name: str, context_name: str, version: str):
     with open(f"{path}/main.py", "w") as f:
-        print(f"from .{module_name} import {context_name}\n\n", file=f)
+        print(f"from {module_name} import {context_name}\n\n", file=f)
         print(f"__version__ = '{version}'", file=f)
         print("def main():", file=f)
         print("\tdevice = None # Environment variable, JSON file, TBD.", file=f)
@@ -288,8 +313,6 @@ def main():
         build(
             service_module_path=args.service_path
         )
-
-
 
 
 def adapt_name(name, path):

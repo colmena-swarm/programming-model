@@ -30,9 +30,11 @@ from colmena import (
     Async,
     KPI, Dependencies, Version
 )
+from colmena.decorators.base_image import BaseImage
 
 
 class CompanyPremises(Context):
+    @Version("0.1")
     @Dependencies("numpy")
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -61,6 +63,7 @@ class ExampleApplication(Service):
         @Context("company_premises", "*.*.lobby")
         @Channel("buffer")
         @Metric("sensed")
+        @BaseImage("examplebase")
         @Requirements("CAMERA")
         def __init__(self, *args, **kwargs):
             super().__init__(*args, **kwargs)
@@ -74,6 +77,7 @@ class ExampleApplication(Service):
             time.sleep(1)
 
     class Processing(Role):
+        @Version("0.1")
         @Dependencies("numpy")
         @Channel("result")
         @Channel("buffer")

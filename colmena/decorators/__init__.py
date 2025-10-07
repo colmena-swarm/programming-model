@@ -23,3 +23,4 @@ from colmena.decorators.kpi import KPI
 from colmena.decorators.metric import Metric
 from colmena.decorators.requirements import Requirements
 from colmena.decorators.version import Version
+from colmena.decorators.base_image import BaseImage

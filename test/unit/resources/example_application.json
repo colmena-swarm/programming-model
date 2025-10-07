@@ -5,7 +5,7 @@
   "dockerContextDefinitions": [
     {
       "id": "company_premises",
-      "imageId": "company_premises:latest"
+      "imageId": "company_premises:0.1"
     }
   ],
   "kpis": [],
@@ -20,7 +20,7 @@
     },
     {
       "id": "Processing",
-      "imageId": "processing:latest",
+      "imageId": "processing:0.1",
       "hardwareRequirements": [
         "CPU"
       ],

@@ -19,7 +19,7 @@
 
 __version__ = "0.1.4"
 
-from colmena.decorators import Channel, Data, Dependencies, KPI, Metric, Requirements, Version, Async, Persistent
+from colmena.decorators import Channel, Data, Dependencies, KPI, Metric, Requirements, Version, Async, Persistent, BaseImage
 from colmena.abstractions import ChannelInterface, DataInterface, MetricInterface
 from colmena.context import Context
 from colmena.role import Role

@@ -112,6 +112,53 @@ To get started with the COLMENA programming model, follow these steps:
             print(self.structure["floor1"][0])
     ```
 
+    **Parallelising Computation with COMPSs**
+
+    COLMENA supports parallelising computation using COMPSs (COMP Superscalar) through the `@task` and `@container` decorators. This allows you to execute computationally intensive tasks in parallel across distributed resources.
+
+    To use COMPSs parallelisation:
+
+    1. Import the required decorators:
+    ```python
+    from pycompss.api.task import task
+    from pycompss.api.container import container
+    from pycompss.api.api import compss_wait_on
+    ```
+
+    2. Define your parallel tasks using the `@task` and `@container` decorators:
+    ```python
+    @container(engine="DOCKER", image="increment")
+    @task(returns=1)
+    def increment(value):
+        return value + 1
+    ```
+
+    The `@container` decorator specifies:
+    - `engine`: The container runtime to use (e.g., "DOCKER")
+    - `image`: The Docker image containing the execution environment
+
+    The `@task` decorator marks the function as a COMPSs task that can be executed in parallel, with `returns` specifying the number of return values.
+
+    3. Use the tasks in your role's behavior and synchronize results:
+    ```python
+    class Increment(Role):
+        @Requirements("COMPSS")
+        def __init__(self, *args, **kwargs):
+            super().__init__(*args, **kwargs)
+
+        @Persistent()
+        def behavior(self):
+            global values
+            for pos in range(len(values)):
+                values[pos] = increment(values[pos])  # Tasks executed in parallel
+            values = compss_wait_on(values)  # Synchronize results
+            print(values)
+    ```
+
+    Note that roles using COMPSs should specify `@Requirements("COMPSS")` to ensure they are deployed on nodes with COMPSs support. The `compss_wait_on()` function synchronizes the results of parallel tasks before they are used.
+
+    See `examples/example_compss.py` for a complete working example.
+
 4. Build the service:
     ``` bash
     colmena_build --service_path="<path_to_the_service_root>" \

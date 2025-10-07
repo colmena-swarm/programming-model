@@ -45,7 +45,7 @@ class Context:
         self.scope = decoded_initial_value
 
     def handler(self, encoded_new_scope):
-        new_scope = decode_zenoh_value(encoded_new_scope.payload)
+        new_scope = decode_zenoh_value(encoded_new_scope.payload.to_string())
         self.__logger.info(f"scope change. context: {self.context_name}, "
                            f"previousScope: {self.scope}, newScope: {new_scope}")
         self.scope = new_scope

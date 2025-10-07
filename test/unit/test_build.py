@@ -21,6 +21,7 @@ import os
 import json
 import subprocess
 from sys import modules
+from datetime import datetime
 from typing import List, Callable
 
 import importlib
@@ -88,7 +89,7 @@ class TestBuild:
             try:
                 version = service.config[role_name]['version']
             except KeyError:
-                version = 'latest'
+                version = datetime.utcnow().strftime('%Y%m%d%H%M%S%f')
             tags[role_name] = f"{role_name.lower()}:{version}"
 
         if service.context is not None:
@@ -103,7 +104,7 @@ class TestBuild:
                 try:
                     version = service.context[context_name].version
                 except AttributeError:
-                    version = 'latest'
+                    version = datetime.utcnow().strftime('%Y%m%d%H%M%S%f')
                 tags[context_name] = f"{context_name.lower()}:{version}"
 
             write_service_description(build_path, tags, roles, service, service.context.keys())

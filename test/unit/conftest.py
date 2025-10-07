@@ -17,11 +17,13 @@
 
 # -*- coding: utf-8 -*-
 
+import os
 import pytest
 
 
 def pytest_addoption(parser):
-    parser.addoption("--folder", action="store", default="./resources", help="Folder with the application code files.")
+    parser.addoption("--folder", action="store", default=f"{os.getcwd()}/test/unit/resources",
+                     help="Folder with the application code files.")
 
 
 @pytest.fixture

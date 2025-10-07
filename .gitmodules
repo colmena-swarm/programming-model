@@ -1,0 +1,3 @@
+[submodule "colmena/templates/compss"]
+	path = colmena/templates/compss
+	url = git@gitlab-internal.bsc.es:wdc/compss/framework.git
